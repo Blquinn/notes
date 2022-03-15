@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=notes
+Exec=notes
+Icon=me.blq.notes
+Terminal=false
+Type=Application
+Categories=GTK;
+StartupNotify=true

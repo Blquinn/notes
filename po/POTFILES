@@ -1,0 +1,7 @@
+data/me.blq.notes.desktop.in
+data/me.blq.notes.appdata.xml.in
+data/me.blq.notes.gschema.xml
+src/window.ui
+src/main.vala
+src/window.vala
+

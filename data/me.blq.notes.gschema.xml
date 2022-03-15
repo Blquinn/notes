@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="notes">
+	<schema id="me.blq.notes" path="/me/blq/notes/">
+	</schema>
+</schemalist>
