@@ -21,9 +21,8 @@ namespace Notes {
 		private ActionEntry[] APP_ACTIONS = {
 			{ "about", on_about_action },
 			{ "preferences", on_preferences_action },
-			{ "quit", quit }
+			{ "quit", quit },
 		};
-
 
 		public Application () {
 			Object (application_id: "me.blq.notes", flags: ApplicationFlags.FLAGS_NONE);
@@ -36,7 +35,7 @@ namespace Notes {
 			base.activate();
 			var win = this.active_window;
 			if (win == null) {
-				win = new Notes.Window (this);
+				win = new Widgets.Window (this);
 			}
 			win.present ();
 		}

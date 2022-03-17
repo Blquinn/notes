@@ -16,11 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace Notes {
+namespace Notes.Widgets {
     public class NoteListItem : Gtk.Box {
         private Gtk.Label title_lbl;
         private Gtk.Label update_time_lbl;
         private Gtk.Label note_preview_lbl;
+        private Gtk.PopoverMenu context_menu;
 
         public NoteListItem() {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 8);
@@ -62,6 +63,21 @@ namespace Notes {
             note_preview_lbl.wrap = true;
             note_preview_lbl.wrap_mode = Pango.WrapMode.WORD_CHAR;
             append(note_preview_lbl);
+
+            // Context Menu
+            context_menu = new Gtk.PopoverMenu.from_model(Widgets.create_note_actions_menu());
+            context_menu.set_parent(this);
+
+            var click_gesture = new Gtk.GestureClick();
+            click_gesture.button = Gdk.BUTTON_SECONDARY;
+            click_gesture.pressed.connect((n_press, x, y) => {
+                debug("Popping up note context menu.");
+                Gtk.Allocation alloc;
+                this.get_allocation(out alloc);
+                context_menu.pointing_to = alloc;
+                context_menu.popup();
+            });
+            add_controller(click_gesture);
         }
     }
 

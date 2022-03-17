@@ -1,4 +1,4 @@
-/* note.vala
+/* note_context_menu.vala
  *
  * Copyright 2022 Benjamin Quinn
  *
@@ -16,20 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-namespace Notes.Models {
-    public class Note : Object {
-        public string title { get; set; }
-        public string body_preview { get; set; default = ""; }
-        private string _body = "";
-        public string body { 
-            get { return _body; }
-            set {
-                //  Sqlite.
-                _body = value;
-                body_preview = value.slice(0, value.char_count(75));
-            } 
-        }
-
-    }
+namespace Notes.Widgets {
+    public class NoteContextMenu {}
 }

@@ -1,14 +1,21 @@
 notes_sources = [
   'main.vala',
   'application.vala',
+  'models/db.vala',
   'models/note.vala',
   'widgets/window.vala',
   'widgets/side_bar.vala',
   'widgets/editor.vala',
+  'widgets/edit_notebooks_dialog.vala',
+  'widgets/move_note_dialog.vala',
+  'widgets/note_menu.vala',
+  'widgets/note_context_menu.vala',
+  'widgets/notebook_selection_menu.vala',
 ]
 
 notes_deps = [
   dependency('gtk4', required: true),
+  dependency('sqlite3', required: true),
   dependency('libadwaita-1', required: true),
 ]
 

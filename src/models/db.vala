@@ -1,4 +1,4 @@
-/* note.vala
+/* db.vala
  *
  * Copyright 2022 Benjamin Quinn
  *
@@ -16,20 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Sqlite;
 
 namespace Notes.Models {
-    public class Note : Object {
-        public string title { get; set; }
-        public string body_preview { get; set; default = ""; }
-        private string _body = "";
-        public string body { 
-            get { return _body; }
-            set {
-                //  Sqlite.
-                _body = value;
-                body_preview = value.slice(0, value.char_count(75));
-            } 
+
+    public errordomain DbError {
+        ERROR
+    }
+
+    public class Db {
+        private Sqlite.Database db;
+
+        public Db() throws DbError {
+            init();
         }
 
+        private void must(int rc) throws DbError {
+            if (rc != Sqlite.OK)
+                throw new DbError.ERROR(db.errmsg());
+        }
+
+        private void init() throws DbError {
+            must(Sqlite.Database.open_v2("notes.db", out db));
+        }
     }
 }
