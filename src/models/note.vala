@@ -24,16 +24,15 @@ namespace Notes.Models {
 
     public class Note : Object {
         public string title { get; set; }
-        public string body_preview { get; set; default = ""; }
-        private string _body = "";
-        public string body { 
-            get { return _body; }
-            set {
-                //  Sqlite.
-                _body = value;
-                body_preview = value.slice(0, value.char_count(75));
+        public Gtk.TextBuffer body_buffer { get; set; }
+        public string body_preview { 
+            owned get {
+                Gtk.TextIter start;
+                Gtk.TextIter end;
+                body_buffer.get_start_iter(out start);
+                body_buffer.get_iter_at_offset(out end, 75);
+                return body_buffer.get_text(start, end, false);
             } 
         }
-
     }
 }

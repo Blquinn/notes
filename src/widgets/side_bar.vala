@@ -18,19 +18,27 @@
 
 namespace Notes.Widgets {
     public class NoteListItem : Gtk.Box {
+        private Models.AppState state;
+
+        private Models.Note _note;
+        public Models.Note note { 
+            get { return _note; }
+            set {
+                _note = value;
+                title_lbl.label = _note.title;
+                note_preview_lbl.label = _note.body_preview;
+            } 
+        }
+
         private Gtk.Label title_lbl;
         private Gtk.Label update_time_lbl;
         private Gtk.Label note_preview_lbl;
         private Gtk.PopoverMenu context_menu;
 
-        public NoteListItem() {
+        public NoteListItem(Models.AppState state) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 8);
+            this.state = state;
             build_ui();
-        }
-
-        public void set_note(Models.Note note) {
-            title_lbl.label = note.title;
-            note_preview_lbl.label = note.body_preview;
         }
 
         private void build_ui() {
@@ -75,33 +83,25 @@ namespace Notes.Widgets {
                 Gtk.Allocation alloc;
                 this.get_allocation(out alloc);
                 context_menu.pointing_to = alloc;
+                state.active_note = note;
                 context_menu.popup();
             });
             add_controller(click_gesture);
         }
     }
 
-    // Sort by notebook title.
-    //  public class NoteSorter : Gtk.Sorter {
-    //      public override Gtk.Ordering compare(GLib.Object? item1, GLib.Object? item2) {
-    //          //  ((Models.Note) item1).body
-    //          //  Gtk.Ordering.
-    //      }
-
-    //      public override Gtk.SorterOrder get_order() {
-    //          return Gtk.SorterOrder.PARTIAL;
-    //      }
-    //  }
-
 	public class SideBar : Gtk.Box {
-        public SideBar() {
+        private Models.AppState state;
+
+        public SideBar(Models.AppState state) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
+            this.state = state;
             build_ui();
         }
 
         private Gtk.Widget create_note_widget(Object note) {
-            var item = new NoteListItem();
-            item.set_note((Models.Note) note);
+            var item = new NoteListItem(state);
+            item.note = (Models.Note) note;
             return item;
         }
 
@@ -114,28 +114,15 @@ namespace Notes.Widgets {
                 margin_start = search_entry_margin,
             });
 
-            var notes_model = new ListStore(typeof(Models.Note));
-            var n1 = new Models.Note();
-            n1.title = "Hello lk2lkj3kjl 32kjl32rjkl 32rjk l23jrlj kl kjjkl";
-            n1.body = "ljkaklk3 jlkk3lj2kjl 23jk aslkkl k1";
-            notes_model.append(n1);
-
-            var n2 = new Models.Note();
-            n2.title = "World";
-            n2.body = "lkj23kjl23 lkkj l234jkl2jkl3 kjl jkl12klj21kljlkj213lkj23kjl 23kl j123lkjljk12ljk ";
-            notes_model.append(n2);
-
             var notes_list = new Gtk.ListBox();
-            // TODO: Sort by notebook.
-            //  var sorted_model = new Gtk.SortListModel(notes_model, );
-            notes_list.bind_model(notes_model, create_note_widget);
-            //  notes_list.set_header_func()
-            //  notes_list.
-            //  notes_list.set_hea
+            notes_list.bind_model(state.notes, create_note_widget);
+            notes_list.selected_rows_changed.connect(() => {
+                var row = notes_list.get_selected_row();
+                var note_item = (NoteListItem) row.child;
+                var note = note_item.note;
+                state.active_note = note;
+            });
             append(notes_list);
-
-            //  var lb = new Gtk.ListBox();
-            //  lb.set_header_func(owned Gtk.ListBoxUpdateHeaderFunc? update_header)
         }
     }
 }

@@ -18,33 +18,82 @@
 
 namespace Notes.Widgets {
     public class Editor : Gtk.Box {
-        
-        //  public Note
-        
-        public Editor() {
+
+        private Models.AppState state;
+        private Gtk.Stack stack;
+
+        private Gtk.Box editor_box;
+        private Gtk.Label placeholder;
+        private Gtk.Entry title_entry;
+        private Gtk.Label notebook_name_lbl;
+        private Gtk.TextView note_text;
+
+        public Editor(Models.AppState state) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
+            this.state = state;
             build_ui();
         }
 
         private void on_move_notebook_btn_clicked() {
             debug("Move notebook button clicked.");
 
-            new MoveNoteDialog(new Models.Note() { title = "My Note" }) {
+            if (state.active_note == null) {
+                debug("Active note is null, not opening move diag.");
+                return;
+            }
+
+            new MoveNoteDialog(state.active_note) {
                 transient_for = (Gtk.Window) this.root,
             }.present();
+        }
+
+        private void on_active_note_changed() {
+            var note = state.active_note;
+            if (note == null) {
+                stack.set_visible_child(placeholder);
+                return;
+            }
+
+            stack.set_visible_child(editor_box);
+
+            // Set the rest of the properties.
+
+            title_entry.text = note.title;
+
+            // Hack to reset undo/redo stacks. Otherwise pressing undo after changing notes
+            // would undo changes from the last note :/
+            // Undo/Redo stacks should be stored on the buffer like they are for TextView...
+            title_entry.enable_undo = false;
+            title_entry.enable_undo = true;
+
+            notebook_name_lbl.label = "Notebook name";
+            note_text.buffer = note.body_buffer;
         }
         
         private void build_ui() {
             add_css_class("view");
+
+            // Empty page.
+            stack = new Gtk.Stack();
+            append(stack);
+
+            editor_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+            stack.add_child(editor_box);
+
+            placeholder = new Gtk.Label(null);
+            stack.add_child(placeholder);
+
+            stack.set_visible_child(placeholder);
+
+            state.notify["active-note"].connect(on_active_note_changed);
             
-            var title_entry = new Gtk.Entry() {
-                text = "Pluto",
+            title_entry = new Gtk.Entry() {
                 css_classes = {"flat", "title-1"},
                 halign = Gtk.Align.FILL,
             };
             
             var contents_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 8);
-            append(new Adw.Clamp() {
+            editor_box.append(new Adw.Clamp() {
                 margin_top = 8,
                 margin_end = 8,
                 margin_bottom = 8,
@@ -56,6 +105,7 @@ namespace Notes.Widgets {
             contents_box.append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
             
             var note_details_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
+            // TODO: Source this from somewhere.
             var last_updated_lbl = new Gtk.Label("Last updated yesterday");
             note_details_box.append(last_updated_lbl);
             
@@ -68,14 +118,14 @@ namespace Notes.Widgets {
                 icon_name = "accessories-text-editor-symbolic",
             };
             change_nb_btn_box.append(nb_icon);
-            var nb_name_lbl = new Gtk.Label("Astronomy");
-            change_nb_btn_box.append(nb_name_lbl);
+            notebook_name_lbl = new Gtk.Label(null);
+            change_nb_btn_box.append(notebook_name_lbl);
             change_nb_btn.child = change_nb_btn_box;
             note_details_box.append(change_nb_btn);
             
             contents_box.append(note_details_box);
             
-            var edit = new Gtk.TextView() {
+            note_text = new Gtk.TextView() {
                 wrap_mode = Gtk.WrapMode.WORD_CHAR,
                 vexpand = true,
             };
@@ -98,7 +148,7 @@ namespace Notes.Widgets {
             //  edit.buffer.insert_with_tags_by_name(ref iter, "1. Unordered list.", -1, "ul", "li"); 
             
             contents_box.append(new Gtk.ScrolledWindow() {
-                child = edit
+                child = note_text,
             });
         }
     }

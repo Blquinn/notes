@@ -17,8 +17,6 @@
  */
 
 int main (string[] args) {
-	var app = new Notes.Application ();
-	// TODO: Make me configurable.
-	//  app.style_manager.set_color_scheme(Adw.ColorScheme.PREFER_DARK);
-	return app.run (args);
+	var app = new Notes.Application();
+	return app.run(args);
 }

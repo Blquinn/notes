@@ -18,6 +18,8 @@
 
 namespace Notes.Widgets {
 	public class Window : Adw.ApplicationWindow {
+
+		private Models.AppState state;
 		
 		private ActionEntry[] WIN_ACTIONS = {
 			// Window actions
@@ -36,9 +38,15 @@ namespace Notes.Widgets {
 		private const string TRASH = _("Trash");
 
 		private Gtk.Label notebooks_dropdown_btn_lbl;
-		
-		public Window (Gtk.Application app) {
-			Object (application: app);
+
+		public Window(Notes.Application app, Models.AppState state) {
+			Object(application: app);
+
+			this.state = state;
+
+			//  state.notify["active-note"].connect((p) => {
+			//  });
+
 			this.add_action_entries(this.WIN_ACTIONS, this);
 			
 			// Couldn't get this to work with action entries :/
@@ -67,7 +75,12 @@ namespace Notes.Widgets {
 		
 		private void on_active_note_move_to() {
 			debug("Opening move active note to dialog.");
-			new MoveNoteDialog(new Models.Note() {title = "foo"}) {
+
+			if (state.active_note == null) {
+				debug("Active note null, not opening move note diag.");
+				return;
+			}
+			new MoveNoteDialog(state.active_note) {
 				transient_for = this,
 			}.present();
 		}
@@ -197,12 +210,6 @@ namespace Notes.Widgets {
 			
 			// Show hamburger menu here if leaflet is folded.
 			
-			var sidebar_menu_btn = new Gtk.Button();
-			sidebar_menu_btn.visible = leaflet.folded;
-			leaflet.bind_property("folded", sidebar_menu_btn, "visible", GLib.BindingFlags.DEFAULT, null, null);
-			sidebar_menu_btn.icon_name = "view-more-symbolic";
-			sidebar_header.pack_end(sidebar_menu_btn);
-			
 			var open_menu_btn = new Gtk.MenuButton();
 			open_menu_btn.icon_name = "open-menu-symbolic";
 			sidebar_header.pack_end(open_menu_btn);
@@ -239,7 +246,7 @@ namespace Notes.Widgets {
 			
 			// SideBar Content
 			
-			var sidebar_content = new SideBar();
+			var sidebar_content = new SideBar(state);
 			sidebar_box.append(sidebar_content);
 			
 			// Separator
@@ -276,10 +283,14 @@ namespace Notes.Widgets {
 			
 			content_box.append(content_header);
 
-			var content = new Editor();
+			var content = new Editor(state);
 			content_box.append(content);
-			
-			leaflet.navigate(Adw.NavigationDirection.FORWARD);
+
+			// Open editor page when active note changes.
+			state.notify["active-note"].connect(() => {
+				if (state.active_note != null)
+					leaflet.navigate(Adw.NavigationDirection.FORWARD);
+			});
 		}
 	}
 }
