@@ -18,6 +18,10 @@
 
 
 namespace Notes.Models {
+    public class Notebook : Object {
+        public string name { get; set; }
+    }
+
     public class Note : Object {
         public string title { get; set; }
         public string body_preview { get; set; default = ""; }

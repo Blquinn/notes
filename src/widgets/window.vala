@@ -93,6 +93,8 @@ namespace Notes.Widgets {
 
 		private void on_open_edit_notebooks() {
 			debug("Opening edit notebooks modal.");
+
+			new EditNotebooksDialog() { transient_for = this }.present();
 		}
 		
 		private MenuModel build_window_menu() {

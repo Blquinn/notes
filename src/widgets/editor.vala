@@ -25,6 +25,14 @@ namespace Notes.Widgets {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
             build_ui();
         }
+
+        private void on_move_notebook_btn_clicked() {
+            debug("Move notebook button clicked.");
+
+            new MoveNoteDialog(new Models.Note() { title = "My Note" }) {
+                transient_for = (Gtk.Window) this.root,
+            }.present();
+        }
         
         private void build_ui() {
             add_css_class("view");
@@ -38,8 +46,8 @@ namespace Notes.Widgets {
             var contents_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 8);
             append(new Adw.Clamp() {
                 margin_top = 8,
-                margin_top = 8,
                 margin_end = 8,
+                margin_bottom = 8,
                 margin_start = 8,
                 maximum_size = 800,
                 child = contents_box,
@@ -53,6 +61,7 @@ namespace Notes.Widgets {
             
             var change_nb_btn = new Gtk.Button();
             change_nb_btn.add_css_class("flat");
+            change_nb_btn.clicked.connect(on_move_notebook_btn_clicked);
             
             var change_nb_btn_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             var nb_icon = new Gtk.Image() {

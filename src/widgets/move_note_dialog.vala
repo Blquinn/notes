@@ -17,5 +17,103 @@
  */
 
 namespace Notes.Widgets {
-    public class NewNoteDialog {}
+    public class MoveNoteDialog : Adw.Window {
+        private Models.Note note;
+        
+        public MoveNoteDialog(Models.Note note) {
+            Object(
+                modal: true,
+                height_request: 300,
+                width_request: 300
+            );
+
+            this.note = note;
+            this.build_ui();
+        }
+
+        private void build_ui() {
+            var box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+            this.content = box;
+
+            // TODO: Have esc key close modal?
+
+            var headerbar = new Adw.HeaderBar() {
+                show_end_title_buttons = false,
+            };
+            box.append(headerbar);
+
+            headerbar.title_widget = new Gtk.Label(_("Move To"));
+
+            var cancel_btn = new Gtk.Button() {
+                label = _("Cancel"),
+            };
+            cancel_btn.clicked.connect(this.close);
+            headerbar.pack_start(cancel_btn);
+
+            var move_btn = new Gtk.Button() {
+                label = _("Move"),
+                sensitive = false,
+            };
+            headerbar.pack_end(move_btn);
+            move_btn.clicked.connect(() => {
+                debug("Move notebook button clicked.");
+                close();
+            });
+
+            // TODO: This is shared with the edit_notebooks_dialog. Extract component?
+            var new_notebook_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                margin_top = 8,
+                margin_end = 8,
+                margin_bottom = 8,
+                margin_start = 8,
+                css_classes = {"linked"},
+                hexpand = true,
+            };
+            box.append(new_notebook_box);
+
+            var new_notebook_entry = new Gtk.Entry() {
+                placeholder_text = _("New Notebook..."),
+                hexpand = true,
+            };
+            new_notebook_box.append(new_notebook_entry);
+            var new_notebook_btn = new Gtk.Button() {
+                label = _("Add"),
+                sensitive = false,
+            };
+            new_notebook_entry.bind_property("text", new_notebook_btn, "sensitive", GLib.BindingFlags.DEFAULT, (_, f, ref t) => {
+                t.set_boolean(f.get_string() != "");
+                return true;
+            }, null);
+            new_notebook_box.append(new_notebook_btn);
+
+            var model = new ListStore(typeof(Models.Notebook));
+            model.append(new Models.Notebook() { name = "Astronomy" });
+            model.append(new Models.Notebook() { name = "Personal" });
+            model.append(new Models.Notebook() { name = "Work" });
+
+            var notebooks_list = new Gtk.ListBox() {
+                hexpand = true,
+                selection_mode = Gtk.SelectionMode.SINGLE,
+            };
+            notebooks_list.selected_rows_changed.connect(() => {
+                move_btn.sensitive = true;
+            });
+            var notebooks_scroll = new Gtk.ScrolledWindow() {
+                child = notebooks_list,
+                vexpand = true,
+            };
+            box.append(notebooks_scroll);
+            notebooks_list.bind_model(model, (nb) => {
+                var notebook = (Models.Notebook) nb;
+                return new Gtk.Label(notebook.name) {
+                    halign = Gtk.Align.START,
+                    margin_top = 16,
+                    margin_end = 16,
+                    margin_bottom = 16,
+                    margin_start = 16,
+                    ellipsize = Pango.EllipsizeMode.END,
+                };
+            });
+        }
+    }
 }
