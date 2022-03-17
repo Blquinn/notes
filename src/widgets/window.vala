@@ -52,6 +52,10 @@ namespace Notes.Widgets {
 			
 			build_ui();
 		}
+
+		private void on_add_note_btn_clicked() {
+			debug("Add note clicked.");
+		}
 		
 		private void on_active_note_open_in_new_window() {
 			debug("Opening active note in new window.");
@@ -63,6 +67,9 @@ namespace Notes.Widgets {
 		
 		private void on_active_note_move_to() {
 			debug("Opening move active note to dialog.");
+			new MoveNoteDialog(new Models.Note() {title = "foo"}) {
+				transient_for = this,
+			}.present();
 		}
 		
 		private void on_active_note_move_to_trash() {
@@ -176,7 +183,6 @@ namespace Notes.Widgets {
 			
 			// Sidebar
 			var sidebar_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-			//  var sidebar_page = leaflet.append(sidebar_box);
 			leaflet.append(sidebar_box);
 			var sidebar_header = new Adw.HeaderBar();
 			leaflet.bind_property("folded", sidebar_header, "show-end-title-buttons", GLib.BindingFlags.DEFAULT, null, null);
@@ -187,6 +193,7 @@ namespace Notes.Widgets {
 			var add_note_btn = new Gtk.Button();
 			add_note_btn.icon_name = "list-add-symbolic";
 			sidebar_header.pack_start(add_note_btn);
+			add_note_btn.clicked.connect(on_add_note_btn_clicked);
 			
 			// Show hamburger menu here if leaflet is folded.
 			
@@ -258,8 +265,9 @@ namespace Notes.Widgets {
 			});
 			leaflet.bind_property("folded", navigate_back_btn, "visible", GLib.BindingFlags.DEFAULT, null, null);
 			
-			var menu_btn = new Gtk.MenuButton();
-			menu_btn.icon_name = "view-more-symbolic";
+			var menu_btn = new Gtk.MenuButton() {
+				icon_name = "view-more-symbolic",
+			};
 			content_header.pack_end(menu_btn);
 			
 			var note_actions_popover = new Gtk.PopoverMenu.from_model(Widgets.create_note_actions_menu());
@@ -267,6 +275,7 @@ namespace Notes.Widgets {
 			menu_btn.activate.connect(note_actions_popover.present);
 			
 			content_box.append(content_header);
+
 			var content = new Editor();
 			content_box.append(content);
 			
