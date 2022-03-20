@@ -3,5 +3,6 @@
   <gresource prefix="/me/blq/notes">
     <file>gtk/help-overlay.ui</file>
     <file>gtk/shortcuts-window.ui</file>
+    <file>css/style.css</file>
   </gresource>
 </gresources>

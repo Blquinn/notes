@@ -34,9 +34,6 @@ namespace Notes.Widgets {
 			{ "open-edit-notebooks", on_open_edit_notebooks },
 		};
 
-		private const string ALL_NOTES = _("All Notes");
-		private const string TRASH = _("Trash");
-
 		private Gtk.Label notebooks_dropdown_btn_lbl;
 
 		public Window(Notes.Application app, Models.AppState state) {
@@ -44,8 +41,7 @@ namespace Notes.Widgets {
 
 			this.state = state;
 
-			//  state.notify["active-note"].connect((p) => {
-			//  });
+			add_css_provider();
 
 			this.add_action_entries(this.WIN_ACTIONS, this);
 			
@@ -54,15 +50,23 @@ namespace Notes.Widgets {
 			change_text_action.activate.connect(on_change_text_size);
 			this.add_action(change_text_action);
 
-			var change_notebook_action = new SimpleAction.stateful("change-notebook", GLib.VariantType.STRING, ALL_NOTES);
+			var change_notebook_action = new SimpleAction.stateful("change-notebook", GLib.VariantType.STRING, Models.NOTEBOOK_ALL_NOTES);
 			change_notebook_action.activate.connect(on_change_notebook);
 			this.add_action(change_notebook_action);
 			
 			build_ui();
 		}
 
+		private void add_css_provider() {
+			var provider = new Gtk.CssProvider();
+			provider.load_from_resource("/me/blq/notes/css/style.css");
+			Gtk.StyleContext.add_provider_for_display(get_display(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+		}
+
 		private void on_add_note_btn_clicked() {
 			debug("Add note clicked.");
+
+			state.add_note(new Models.Note(state));
 		}
 		
 		private void on_active_note_open_in_new_window() {
@@ -71,6 +75,10 @@ namespace Notes.Widgets {
 		
 		private void on_active_note_pin() {
 			debug("Pinning active note.");
+			var n = state.active_note;
+			if (n == null)
+				return;
+			n.is_pinned = !n.is_pinned;
 		}
 		
 		private void on_active_note_move_to() {
@@ -80,13 +88,22 @@ namespace Notes.Widgets {
 				debug("Active note null, not opening move note diag.");
 				return;
 			}
-			new MoveNoteDialog(state.active_note) {
+			new MoveNoteDialog(state, state.active_note) {
 				transient_for = this,
 			}.present();
 		}
 		
 		private void on_active_note_move_to_trash() {
 			debug("Moving active not to trash.");
+
+			var n = state.active_note;
+			if (n == null)
+				return;
+
+			if (n.deleted_at == null)
+				n.deleted_at = new DateTime.now_local();
+			else
+				n.deleted_at = null;
 		}
 		
 		private void on_open_keyboard_shortcuts() {
@@ -109,12 +126,13 @@ namespace Notes.Widgets {
 			debug("Changing active notebook to %s", nb);
 			action.set_state(nb);
 			notebooks_dropdown_btn_lbl.label = nb;
+			state.active_notebook = nb;
 		}
 
 		private void on_open_edit_notebooks() {
 			debug("Opening edit notebooks modal.");
 
-			new EditNotebooksDialog() { transient_for = this }.present();
+			new EditNotebooksDialog(state) { transient_for = this }.present();
 		}
 		
 		private MenuModel build_window_menu() {
@@ -154,21 +172,19 @@ namespace Notes.Widgets {
 			menu.append_section(null, section1);
 			
 			var all_notes = new MenuItem(_("All notes"), "win.change-notebook");
-			all_notes.set_attribute_value("target", ALL_NOTES);
+			all_notes.set_attribute_value("target", Models.NOTEBOOK_ALL_NOTES);
 			section1.append_item(all_notes);
 
 			var section2 = new Menu();
 			menu.append_section(_("Notebooks"), section2);
 
-			string[] notebooks = {
-				"Astronomy",
-				"Personal",
-				"Work",
-			};
+			// TODO: Notebooks needs to be stored separately.
+			var notebooks = state.notebooks;
+			for (int i = 0; i < notebooks.get_n_items(); i++) {
+				var notebook = (Models.Notebook) notebooks.get_item(i);
 
-			foreach (var notebook in notebooks) {
-				var notebook_menu_item = new MenuItem(notebook, "win.change-notebook");
-				notebook_menu_item.set_attribute_value("target", notebook);
+				var notebook_menu_item = new MenuItem(notebook.name, "win.change-notebook");
+				notebook_menu_item.set_attribute_value("target", notebook.name);
 				section2.append_item(notebook_menu_item);
 			}
 
@@ -179,15 +195,15 @@ namespace Notes.Widgets {
 			menu.append_section(null, section3);
 
 			var notebook_menu_item = new MenuItem(_("Trash"), "win.change-notebook");
-			notebook_menu_item.set_attribute_value("target", TRASH);
+			notebook_menu_item.set_attribute_value("target", Models.NOTEBOOK_TRASH);
 			section3.append_item(notebook_menu_item);
 			
 			return menu;
 		}
 		
 		private void build_ui() {
-			this.default_height = 600;
-			this.default_width = 800;
+			this.default_height = 700;
+			this.default_width = 950;
 			this.title = _("Notes");
 			
 			var leaflet = new Adw.Leaflet();
@@ -196,6 +212,8 @@ namespace Notes.Widgets {
 			
 			// Sidebar
 			var sidebar_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+			sidebar_box.width_request = 300;
+
 			leaflet.append(sidebar_box);
 			var sidebar_header = new Adw.HeaderBar();
 			leaflet.bind_property("folded", sidebar_header, "show-end-title-buttons", GLib.BindingFlags.DEFAULT, null, null);
@@ -229,6 +247,10 @@ namespace Notes.Widgets {
 			// TODO: When a notebook is added or removed, update this menu.
 			var notebooks_popover = new Gtk.PopoverMenu.from_model(create_notebooks_menu());
 			notebooks_popover.set_parent(this);
+			// Update menu any time the # of notebooks changes.
+			state.notebooks.items_changed.connect(() => {
+				notebooks_popover.menu_model = create_notebooks_menu();
+			});
 
 			notebooks_dropdown_btn.clicked.connect(() => {
 				debug("Creating notebooks popover.");
@@ -237,7 +259,7 @@ namespace Notes.Widgets {
 				notebooks_popover.pointing_to = alloc;
 				notebooks_popover.popup();
 			});
-			notebooks_dropdown_btn_lbl = new Gtk.Label(ALL_NOTES);
+			notebooks_dropdown_btn_lbl = new Gtk.Label(Models.NOTEBOOK_ALL_NOTES);
 			notes_dropdown_btn_box.append(notebooks_dropdown_btn_lbl);
 			var down_arrow_icon = new Gtk.Image();
 			down_arrow_icon.set_from_icon_name("pan-down-symbolic");

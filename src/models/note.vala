@@ -23,8 +23,15 @@ namespace Notes.Models {
     }
 
     public class Note : Object {
-        public string title { get; set; }
-        public Gtk.TextBuffer body_buffer { get; set; }
+        private unowned AppState state;
+
+        public Notebook? notebook { get; set; }
+        // Deleted at determines if a note should be in the trash.
+        public DateTime? deleted_at { get; set; }
+        public DateTime updated_at { get; set; default = new DateTime.now_local(); }
+        public bool is_pinned { get; set; default = false; }
+        public string title { get; set; default = ""; }
+        public Gtk.TextBuffer body_buffer { get; set; default = new Gtk.TextBuffer(null); }
         public string body_preview { 
             owned get {
                 Gtk.TextIter start;
@@ -34,5 +41,20 @@ namespace Notes.Models {
                 return body_buffer.get_text(start, end, false);
             } 
         }
+
+        public Note(AppState state) {
+            this.state = state;
+
+            this.notify["is-pinned"].connect(() => {
+                state.note_moved();
+            });
+            this.notify["deleted-at"].connect(() => {
+                state.note_moved();
+            });
+            this.notify["notebook"].connect(() => {
+                state.note_moved();
+            });
+        }
+        // TODO: debounce updating of preview.
     }
 }

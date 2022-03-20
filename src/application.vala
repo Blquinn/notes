@@ -32,7 +32,7 @@ namespace Notes {
 
 			this.add_action_entries(this.APP_ACTIONS, this);
 			this.set_accels_for_action("app.quit", {"<primary>q"});
-			//  this.set_color_scheme();
+			this.set_color_scheme();
 		}
 
 		public override void activate () {
@@ -71,8 +71,10 @@ namespace Notes {
 		}
 
 		private static Adw.ColorScheme get_adw_scheme(string theme_name) {
-			// There's probably a better way to do this.
-			var is_dark = theme_name.down().contains("dark");
+			var gtk_settings = Gtk.Settings.get_default();
+			var is_dark = (gtk_settings != null && gtk_settings.gtk_application_prefer_dark_theme == true)
+				? true
+				: theme_name.down().contains("dark");
 			return is_dark ? Adw.ColorScheme.PREFER_DARK : Adw.ColorScheme.DEFAULT;
 		}
 	}

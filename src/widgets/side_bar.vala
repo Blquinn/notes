@@ -18,26 +18,19 @@
 
 namespace Notes.Widgets {
     public class NoteListItem : Gtk.Box {
+        const string default_title = _("New Note");
+
         private Models.AppState state;
-
-        private Models.Note _note;
-        public Models.Note note { 
-            get { return _note; }
-            set {
-                _note = value;
-                title_lbl.label = _note.title;
-                note_preview_lbl.label = _note.body_preview;
-            } 
-        }
-
+        public Models.Note note { get; private set; }
         private Gtk.Label title_lbl;
         private Gtk.Label update_time_lbl;
         private Gtk.Label note_preview_lbl;
         private Gtk.PopoverMenu context_menu;
 
-        public NoteListItem(Models.AppState state) {
+        public NoteListItem(Models.AppState state, Models.Note note) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 8);
             this.state = state;
+            this.note = note;
             build_ui();
         }
 
@@ -49,6 +42,13 @@ namespace Notes.Widgets {
 
             var title_row = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             title_lbl = new Gtk.Label(null);
+            note.bind_property("title", title_lbl, "label", GLib.BindingFlags.SYNC_CREATE, (_, f, ref t) => {
+                var title = f.get_string();
+                if (title == "")
+                    title = default_title;
+                t.set_string(title);
+                return true;
+            }, null);
             title_lbl.add_css_class("caption-heading");
             title_lbl.hexpand = true;
             title_lbl.halign = Gtk.Align.START;
@@ -56,13 +56,20 @@ namespace Notes.Widgets {
             title_lbl.ellipsize = Pango.EllipsizeMode.END;
             title_row.append(title_lbl);
 
-            update_time_lbl = new Gtk.Label("12:22");
+            // TODO: Use /org/gnome/desktop/interface/clock-format to set 24/12 hr time.
+            update_time_lbl = new Gtk.Label(null);
+            note.bind_property("updated-at", update_time_lbl, "label", BindingFlags.SYNC_CREATE, (_, f, ref t) => {
+                var ts = (DateTime) f;
+                t.set_string(ts.format("%l:%M"));
+                return true;
+            }, null);
+
             update_time_lbl.add_css_class("dim-label");
             title_row.append(update_time_lbl);
 
             append(title_row);
 
-            note_preview_lbl = new Gtk.Label("Some preview text of the note. lkadlkjalks ldfkjl asdjklasdklj faklj sdflkjla..a.lkla lksljkdf.");
+            note_preview_lbl = new Gtk.Label(note.body_preview);
             note_preview_lbl.add_css_class("caption");
             note_preview_lbl.max_width_chars = 25;
             note_preview_lbl.halign = Gtk.Align.START;
@@ -90,32 +97,136 @@ namespace Notes.Widgets {
         }
     }
 
+    public class NoteListHeader : Gtk.Box {
+        public NoteListHeader(string text) {
+            Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
+            margin_top = 10;
+            var lbl = new Gtk.Label(text) {
+                css_classes = {"heading"},
+            };
+            lbl.halign = Gtk.Align.START;
+            lbl.margin_start = 10;
+            append(lbl);
+            append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
+        }
+    }
+
 	public class SideBar : Gtk.Box {
         private Models.AppState state;
+        private Gtk.SearchEntry filter_entry;
+        private Gtk.ListBox notes_list;
 
         public SideBar(Models.AppState state) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
             this.state = state;
+            state.notify["active-note"].connect(on_active_note_changed);
             build_ui();
         }
 
         private Gtk.Widget create_note_widget(Object note) {
-            var item = new NoteListItem(state);
-            item.note = (Models.Note) note;
-            return item;
+            return new NoteListItem(state, (Models.Note) note);
+        }
+
+        // Sorts the current view of the notes. Sorts on pinned, then last_updated.
+        private int notes_sort_func(Gtk.ListBoxRow a_row, Gtk.ListBoxRow b_row) {
+            var a_note = ((NoteListItem) a_row.child).note;
+            var b_note = ((NoteListItem) b_row.child).note;
+            return Models.AppState.notes_sort(a_note, b_note);
+        }
+
+        private bool notes_filter_func(Gtk.ListBoxRow row) {
+            var note = ((NoteListItem) row.child).note;
+
+            var filter = filter_entry.text;
+            if (filter.length > 0 && !note.title.down().contains(filter.down()))
+                return false;
+
+            if (state.active_notebook == Models.NOTEBOOK_TRASH)
+                return note.deleted_at != null;
+
+            if (note.deleted_at != null)
+                return false;            
+            
+            // TODO: Switch to using notebooks primary keys.
+            var anb = state.active_notebook;
+            string? notebook_name = note.notebook != null ? note.notebook.name : null;
+            if (anb != Models.NOTEBOOK_ALL_NOTES && notebook_name != anb)
+                return false;
+            
+            return true;
+        }
+
+        private void note_header_func(Gtk.ListBoxRow row, Gtk.ListBoxRow? before) {
+            var note = ((NoteListItem) row.child).note;
+
+            // No headers for trash.
+            if (note.deleted_at != null)
+                return;
+
+            if (before == null) {
+                if (note.is_pinned)
+                    row.set_header(new NoteListHeader(_("Pinned")));
+                else
+                    row.set_header(new NoteListHeader(_("Other Notes")));
+                return;
+            }
+
+            var before_note = ((NoteListItem) before.child).note;
+            if (before_note.is_pinned && !note.is_pinned) {
+                row.set_header(new NoteListHeader(_("Other Notes")));
+                return;
+            }
+
+            row.set_header(null);
+        }
+
+        private void on_active_note_changed() {
+            var an = state.active_note;
+            if (an == null)
+                return;
+
+            int i = 0;
+            while (true) {
+                var row = notes_list.get_row_at_index(i);
+                if (row == null)
+                    break;
+                var note = ((NoteListItem) row.child).note;
+                if (an == note) {
+                    notes_list.select_row(row);
+                    break;
+                }
+                i++;
+            }
         }
 
         private void build_ui() {
             const int search_entry_margin = 8;
-            append(new Gtk.SearchEntry() {
+            filter_entry = new Gtk.SearchEntry() {
                 margin_top = search_entry_margin,
                 margin_end = search_entry_margin,
                 margin_bottom = search_entry_margin,
                 margin_start = search_entry_margin,
+            };
+            append(filter_entry);
+
+            notes_list = new Gtk.ListBox() {
+                css_classes = {"notes-list"},
+            };
+
+            notes_list.bind_model(state.notes, create_note_widget);
+            notes_list.set_sort_func(notes_sort_func);
+            notes_list.set_filter_func(notes_filter_func);
+            notes_list.set_header_func(note_header_func);
+
+            filter_entry.notify["text"].connect(notes_list.invalidate_filter);
+            state.notify["active-notebook"].connect(notes_list.invalidate_filter);
+            state.notify["show-trash"].connect(notes_list.invalidate_filter);
+            state.note_moved.connect(() => {
+                notes_list.invalidate_filter();
+                notes_list.invalidate_sort();
+                notes_list.invalidate_headers();
             });
 
-            var notes_list = new Gtk.ListBox();
-            notes_list.bind_model(state.notes, create_note_widget);
             notes_list.selected_rows_changed.connect(() => {
                 var row = notes_list.get_selected_row();
                 var note_item = (NoteListItem) row.child;

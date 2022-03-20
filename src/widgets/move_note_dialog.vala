@@ -18,15 +18,17 @@
 
 namespace Notes.Widgets {
     public class MoveNoteDialog : Adw.Window {
+        private Models.AppState state;
         private Models.Note note;
         
-        public MoveNoteDialog(Models.Note note) {
+        public MoveNoteDialog(Models.AppState state, Models.Note note) {
             Object(
                 modal: true,
                 height_request: 300,
                 width_request: 300
             );
 
+            this.state = state;
             this.note = note;
             this.build_ui();
         }
@@ -55,11 +57,6 @@ namespace Notes.Widgets {
                 sensitive = false,
             };
             headerbar.pack_end(move_btn);
-            move_btn.clicked.connect(() => {
-                debug("Move notebook button clicked.");
-                close();
-            });
-
             // TODO: This is shared with the edit_notebooks_dialog. Extract component?
             var new_notebook_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
                 margin_top = 8,
@@ -80,16 +77,17 @@ namespace Notes.Widgets {
                 label = _("Add"),
                 sensitive = false,
             };
+            new_notebook_btn.clicked.connect(() => {
+                if (new_notebook_entry.text == "")
+                    return;
+                state.add_notebook(new Models.Notebook() { name = new_notebook_entry.text });
+                new_notebook_entry.text = "";
+            });
             new_notebook_entry.bind_property("text", new_notebook_btn, "sensitive", GLib.BindingFlags.DEFAULT, (_, f, ref t) => {
                 t.set_boolean(f.get_string() != "");
                 return true;
             }, null);
             new_notebook_box.append(new_notebook_btn);
-
-            var model = new ListStore(typeof(Models.Notebook));
-            model.append(new Models.Notebook() { name = "Astronomy" });
-            model.append(new Models.Notebook() { name = "Personal" });
-            model.append(new Models.Notebook() { name = "Work" });
 
             var notebooks_list = new Gtk.ListBox() {
                 hexpand = true,
@@ -103,7 +101,7 @@ namespace Notes.Widgets {
                 vexpand = true,
             };
             box.append(notebooks_scroll);
-            notebooks_list.bind_model(model, (nb) => {
+            notebooks_list.bind_model(state.notebooks, (nb) => {
                 var notebook = (Models.Notebook) nb;
                 return new Gtk.Label(notebook.name) {
                     halign = Gtk.Align.START,
@@ -113,6 +111,15 @@ namespace Notes.Widgets {
                     margin_start = 16,
                     ellipsize = Pango.EllipsizeMode.END,
                 };
+            });
+
+            move_btn.clicked.connect(() => {
+                debug("Move notebook button clicked.");
+                //  note.notebook
+                var row = notebooks_list.get_selected_row();
+                var nb = (Models.Notebook) state.notebooks.get_item(row.get_index());
+                note.notebook = nb;
+                close();
             });
         }
     }

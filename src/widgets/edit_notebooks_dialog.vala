@@ -18,9 +18,10 @@
 
 namespace Notes.Widgets {
     public class NotebookEditRow : Gtk.Box {
+        private Models.AppState state;
         private Models.Notebook notebook;
 
-        public NotebookEditRow(Models.Notebook notebook) {
+        public NotebookEditRow(Models.AppState state, Models.Notebook notebook) {
             Object(
                 orientation: Gtk.Orientation.HORIZONTAL, 
                 spacing: 8, 
@@ -30,6 +31,7 @@ namespace Notes.Widgets {
                 margin_bottom: 8,
                 margin_start: 8
             );
+            this.state = state;
             this.notebook = notebook;
             build_ui();
         }
@@ -49,15 +51,18 @@ namespace Notes.Widgets {
             };
             delete_notebook_btn.clicked.connect(() => {
                 debug("Deleting notebook %s", notebook.name);
+                state.remove_notebook(notebook);
             });
             append(delete_notebook_btn);
         }
     }
 
     public class EditNotebooksDialog : Adw.Window {
-        // TODO: Pass in notebooks state.
-        public EditNotebooksDialog() {
+        private Models.AppState state;
+
+        public EditNotebooksDialog(Models.AppState state) {
             Object(modal: true, height_request: 300, width_request: 300);
+            this.state = state;
             build_ui();
         }
 
@@ -92,12 +97,14 @@ namespace Notes.Widgets {
                 t.set_boolean(f.get_string() != "");
                 return true;
             }, null);
-            new_notebook_box.append(new_notebook_btn);
+            new_notebook_btn.clicked.connect(() => {
+                if (new_notebook_entry.text == "")
+                    return;
 
-            var model = new ListStore(typeof(Models.Notebook));
-            model.append(new Models.Notebook() { name = "Astronomy" });
-            model.append(new Models.Notebook() { name = "Personal" });
-            model.append(new Models.Notebook() { name = "Work" });
+                state.add_notebook(new Models.Notebook() { name = new_notebook_entry.text });
+                new_notebook_entry.text = "";
+            });
+            new_notebook_box.append(new_notebook_btn);
 
             var notebooks_list = new Gtk.ListBox() {
                 hexpand = true,
@@ -108,7 +115,7 @@ namespace Notes.Widgets {
                 vexpand = true,
             };
             box.append(notebooks_scroll);
-            notebooks_list.bind_model(model, (nb) => new NotebookEditRow((Models.Notebook) nb));
+            notebooks_list.bind_model(state.notebooks, (nb) => new NotebookEditRow(state, (Models.Notebook) nb));
         }
     }
 }

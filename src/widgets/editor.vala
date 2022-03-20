@@ -28,6 +28,10 @@ namespace Notes.Widgets {
         private Gtk.Label notebook_name_lbl;
         private Gtk.TextView note_text;
 
+        private Binding? title_binding;
+        private Binding? last_updated_binding;
+        private Binding? notebook_name_binding;
+
         public Editor(Models.AppState state) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
             this.state = state;
@@ -42,12 +46,23 @@ namespace Notes.Widgets {
                 return;
             }
 
-            new MoveNoteDialog(state.active_note) {
+            new MoveNoteDialog(state, state.active_note) {
                 transient_for = (Gtk.Window) this.root,
             }.present();
         }
 
         private void on_active_note_changed() {
+            // Unbind existing bindings.
+
+            if (title_binding != null)
+                title_binding.unbind();
+
+            if (last_updated_binding != null)
+                last_updated_binding.unbind();
+
+            if (notebook_name_binding != null)
+                notebook_name_binding.unbind();
+
             var note = state.active_note;
             if (note == null) {
                 stack.set_visible_child(placeholder);
@@ -58,7 +73,7 @@ namespace Notes.Widgets {
 
             // Set the rest of the properties.
 
-            title_entry.text = note.title;
+            title_binding = note.bind_property("title", title_entry, "text", BindingFlags.SYNC_CREATE | BindingFlags.BIDIRECTIONAL, null, null);
 
             // Hack to reset undo/redo stacks. Otherwise pressing undo after changing notes
             // would undo changes from the last note :/
@@ -66,7 +81,14 @@ namespace Notes.Widgets {
             title_entry.enable_undo = false;
             title_entry.enable_undo = true;
 
-            notebook_name_lbl.label = "Notebook name";
+            notebook_name_binding = note.bind_property("notebook", notebook_name_lbl, "label", BindingFlags.DEFAULT | BindingFlags.SYNC_CREATE, 
+                (_, f, ref t) => { 
+                    var notebook = (Models.Notebook?) f;
+                    var name = notebook == null ? Models.NOTEBOOK_ALL_NOTES : notebook.name;
+                    t.set_string(name);
+                    return true; 
+                }, null);
+
             note_text.buffer = note.body_buffer;
         }
         
@@ -90,6 +112,7 @@ namespace Notes.Widgets {
             title_entry = new Gtk.Entry() {
                 css_classes = {"flat", "title-1"},
                 halign = Gtk.Align.FILL,
+                placeholder_text = _("Note Title..."),
             };
             
             var contents_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 8);
