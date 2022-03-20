@@ -26,11 +26,14 @@ namespace Notes.Widgets {
         private Gtk.Label placeholder;
         private Gtk.Entry title_entry;
         private Gtk.Label notebook_name_lbl;
+        private Gtk.Label last_updated_lbl;
         private Gtk.TextView note_text;
 
         private Binding? title_binding;
         private Binding? last_updated_binding;
         private Binding? notebook_name_binding;
+
+        const string last_updated_prefix = _("Last updated");
 
         public Editor(Models.AppState state) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
@@ -88,6 +91,13 @@ namespace Notes.Widgets {
                     t.set_string(name);
                     return true; 
                 }, null);
+                
+            last_updated_binding = note.bind_property("updated-at", last_updated_lbl, "label", GLib.BindingFlags.SYNC_CREATE, 
+                (_, f, ref t) => { 
+                    var update_time = note.updated_at_formatted();
+                    t.set_string(@"$last_updated_prefix $update_time");
+                    return true; 
+                }, null);
 
             note_text.buffer = note.body_buffer;
         }
@@ -129,7 +139,7 @@ namespace Notes.Widgets {
             
             var note_details_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             // TODO: Source this from somewhere.
-            var last_updated_lbl = new Gtk.Label("Last updated yesterday");
+            last_updated_lbl = new Gtk.Label(null);
             note_details_box.append(last_updated_lbl);
             
             var change_nb_btn = new Gtk.Button();

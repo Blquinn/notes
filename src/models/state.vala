@@ -83,12 +83,14 @@ namespace Notes.Models {
                 body_buffer = new Gtk.TextBuffer(null) {
                     text = "lkj23kjl23 lkkj l234jkl2jkl3 kjl jkl12klj21kljlkj213lkj23kjl 23kl j123lkjljk12ljk ",
                 },
+                updated_at = new DateTime(new TimeZone.local(), 2017, 5, 20, 13, 45, 0),
             });
             notes.append(new Models.Note(this) {
                 title = "Blah",
                 body_buffer = new Gtk.TextBuffer(null) {
                     text = "Blee Bloop.",
                 },
+                updated_at = new DateTime(new TimeZone.local(), 2022, 3, 10, 13, 45, 0),
             });
         }
     }

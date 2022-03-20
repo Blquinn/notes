@@ -59,8 +59,7 @@ namespace Notes.Widgets {
             // TODO: Use /org/gnome/desktop/interface/clock-format to set 24/12 hr time.
             update_time_lbl = new Gtk.Label(null);
             note.bind_property("updated-at", update_time_lbl, "label", BindingFlags.SYNC_CREATE, (_, f, ref t) => {
-                var ts = (DateTime) f;
-                t.set_string(ts.format("%l:%M"));
+                t.set_string(note.updated_at_formatted());
                 return true;
             }, null);
 

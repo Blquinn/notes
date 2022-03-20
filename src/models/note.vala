@@ -56,5 +56,19 @@ namespace Notes.Models {
             });
         }
         // TODO: debounce updating of preview.
+
+        public string updated_at_formatted() {
+            var now = new DateTime.now_local();
+            var midnight = new DateTime(now.get_timezone(), now.get_year(), now.get_month(), now.get_day_of_month(), 0, 0, 0);
+
+            if (updated_at.compare(midnight) > 0)
+                //  return updated_at.format("%l:%M");
+                return updated_at.format("%X");
+            
+            if (updated_at.get_year() < now.get_year())
+                return updated_at.get_year().to_string();
+
+            return updated_at.format("%b %e");
+        }
     }
 }

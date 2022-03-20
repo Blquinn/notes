@@ -6,6 +6,8 @@ notes_sources = [
   'models/note.vala',
   'models/state.vala',
 
+  'util/debounce.vala',
+
   'widgets/window.vala',
   'widgets/side_bar.vala',
   'widgets/editor.vala',
