@@ -19,7 +19,8 @@
 namespace Notes.Widgets {
     public class Editor : Gtk.Box {
 
-        private Models.AppState state;
+        private Models.WindowState win_state;
+        private Models.AppState app_state;
         private Gtk.Stack stack;
 
         private Gtk.Box editor_box;
@@ -35,21 +36,22 @@ namespace Notes.Widgets {
 
         const string last_updated_prefix = _("Last updated");
 
-        public Editor(Models.AppState state) {
+        public Editor(Models.AppState state, Models.WindowState win_state) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
-            this.state = state;
+            this.app_state = state;
+            this.win_state = win_state;
             build_ui();
         }
 
         private void on_move_notebook_btn_clicked() {
             debug("Move notebook button clicked.");
 
-            if (state.active_note == null) {
+            if (win_state.active_note == null) {
                 debug("Active note is null, not opening move diag.");
                 return;
             }
 
-            new MoveNoteDialog(state, state.active_note) {
+            new MoveNoteDialog(app_state, win_state.active_note) {
                 transient_for = (Gtk.Window) this.root,
             }.present();
         }
@@ -66,7 +68,7 @@ namespace Notes.Widgets {
             if (notebook_name_binding != null)
                 notebook_name_binding.unbind();
 
-            var note = state.active_note;
+            var note = win_state.active_note;
             if (note == null) {
                 stack.set_visible_child(placeholder);
                 return;
@@ -117,7 +119,7 @@ namespace Notes.Widgets {
 
             stack.set_visible_child(placeholder);
 
-            state.notify["active-note"].connect(on_active_note_changed);
+            win_state.notify["active-note"].connect(on_active_note_changed);
             
             title_entry = new Gtk.Entry() {
                 css_classes = {"flat", "title-1"},

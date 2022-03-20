@@ -19,7 +19,7 @@
 namespace Notes {
 	public class Application : Adw.Application {
 
-		private Models.AppState state = new Models.AppState();
+		private Models.AppState state;
 
 		private ActionEntry[] APP_ACTIONS = {
 			{ "about", on_about_action },
@@ -29,6 +29,8 @@ namespace Notes {
 
 		public Application () {
 			Object (application_id: "me.blq.notes", flags: ApplicationFlags.FLAGS_NONE);
+
+			this.state = new Models.AppState(this);
 
 			this.add_action_entries(this.APP_ACTIONS, this);
 			this.set_accels_for_action("app.quit", {"<primary>q"});

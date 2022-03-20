@@ -20,16 +20,16 @@ namespace Notes.Widgets {
     public class NoteListItem : Gtk.Box {
         const string default_title = _("New Note");
 
-        private Models.AppState state;
+        private Models.WindowState win_state;
         public Models.Note note { get; private set; }
         private Gtk.Label title_lbl;
         private Gtk.Label update_time_lbl;
         private Gtk.Label note_preview_lbl;
         private Gtk.PopoverMenu context_menu;
 
-        public NoteListItem(Models.AppState state, Models.Note note) {
+        public NoteListItem(Models.WindowState win_state, Models.Note note) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 8);
-            this.state = state;
+            this.win_state = win_state;
             this.note = note;
             build_ui();
         }
@@ -89,7 +89,7 @@ namespace Notes.Widgets {
                 Gtk.Allocation alloc;
                 this.get_allocation(out alloc);
                 context_menu.pointing_to = alloc;
-                state.active_note = note;
+                win_state.active_note = note;
                 context_menu.popup();
             });
             add_controller(click_gesture);
@@ -111,19 +111,21 @@ namespace Notes.Widgets {
     }
 
 	public class SideBar : Gtk.Box {
-        private Models.AppState state;
+        private Models.AppState app_state;
+        private Models.WindowState win_state;
         private Gtk.SearchEntry filter_entry;
         private Gtk.ListBox notes_list;
 
-        public SideBar(Models.AppState state) {
+        public SideBar(Models.AppState app_state, Models.WindowState win_state) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
-            this.state = state;
-            state.notify["active-note"].connect(on_active_note_changed);
+            this.app_state = app_state;
+            this.win_state = win_state;
+            win_state.notify["active-note"].connect(on_active_note_changed);
             build_ui();
         }
 
         private Gtk.Widget create_note_widget(Object note) {
-            return new NoteListItem(state, (Models.Note) note);
+            return new NoteListItem(win_state, (Models.Note) note);
         }
 
         // Sorts the current view of the notes. Sorts on pinned, then last_updated.
@@ -140,14 +142,14 @@ namespace Notes.Widgets {
             if (filter.length > 0 && !note.title.down().contains(filter.down()))
                 return false;
 
-            if (state.active_notebook == Models.NOTEBOOK_TRASH)
+            if (win_state.active_notebook == Models.NOTEBOOK_TRASH)
                 return note.deleted_at != null;
 
             if (note.deleted_at != null)
                 return false;            
             
             // TODO: Switch to using notebooks primary keys.
-            var anb = state.active_notebook;
+            var anb = win_state.active_notebook;
             string? notebook_name = note.notebook != null ? note.notebook.name : null;
             if (anb != Models.NOTEBOOK_ALL_NOTES && notebook_name != anb)
                 return false;
@@ -180,7 +182,7 @@ namespace Notes.Widgets {
         }
 
         private void on_active_note_changed() {
-            var an = state.active_note;
+            var an = win_state.active_note;
             if (an == null)
                 return;
 
@@ -212,15 +214,14 @@ namespace Notes.Widgets {
                 css_classes = {"notes-list"},
             };
 
-            notes_list.bind_model(state.notes, create_note_widget);
+            notes_list.bind_model(app_state.notes, create_note_widget);
             notes_list.set_sort_func(notes_sort_func);
             notes_list.set_filter_func(notes_filter_func);
             notes_list.set_header_func(note_header_func);
 
             filter_entry.notify["text"].connect(notes_list.invalidate_filter);
-            state.notify["active-notebook"].connect(notes_list.invalidate_filter);
-            state.notify["show-trash"].connect(notes_list.invalidate_filter);
-            state.note_moved.connect(() => {
+            win_state.notify["active-notebook"].connect(notes_list.invalidate_filter);
+            app_state.note_moved.connect(() => {
                 notes_list.invalidate_filter();
                 notes_list.invalidate_sort();
                 notes_list.invalidate_headers();
@@ -230,7 +231,7 @@ namespace Notes.Widgets {
                 var row = notes_list.get_selected_row();
                 var note_item = (NoteListItem) row.child;
                 var note = note_item.note;
-                state.active_note = note;
+                win_state.active_note = note;
             });
             append(notes_list);
         }

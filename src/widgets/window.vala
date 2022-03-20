@@ -19,7 +19,8 @@
 namespace Notes.Widgets {
 	public class Window : Adw.ApplicationWindow {
 
-		private Models.AppState state;
+		private Models.AppState app_state;
+		public Models.WindowState state { get; private set; }
 		
 		private ActionEntry[] WIN_ACTIONS = {
 			// Window actions
@@ -36,10 +37,10 @@ namespace Notes.Widgets {
 
 		private Gtk.Label notebooks_dropdown_btn_lbl;
 
-		public Window(Notes.Application app, Models.AppState state) {
+		public Window(Notes.Application app, Models.AppState app_state) {
 			Object(application: app);
-
-			this.state = state;
+			this.app_state = app_state;
+			this.state = new Models.WindowState(app_state, this);
 
 			add_css_provider();
 
@@ -66,11 +67,16 @@ namespace Notes.Widgets {
 		private void on_add_note_btn_clicked() {
 			debug("Add note clicked.");
 
-			state.add_note(new Models.Note(state));
+			app_state.add_note(new Models.Note(app_state));
 		}
 		
 		private void on_active_note_open_in_new_window() {
 			debug("Opening active note in new window.");
+
+			var new_win = new Window((Application) this.application, app_state);
+			new_win.state.active_notebook = state.active_notebook;
+			new_win.state.active_note = state.active_note;
+			new_win.present();
 		}
 		
 		private void on_active_note_pin() {
@@ -88,7 +94,7 @@ namespace Notes.Widgets {
 				debug("Active note null, not opening move note diag.");
 				return;
 			}
-			new MoveNoteDialog(state, state.active_note) {
+			new MoveNoteDialog(app_state, state.active_note) {
 				transient_for = this,
 			}.present();
 		}
@@ -132,7 +138,7 @@ namespace Notes.Widgets {
 		private void on_open_edit_notebooks() {
 			debug("Opening edit notebooks modal.");
 
-			new EditNotebooksDialog(state) { transient_for = this }.present();
+			new EditNotebooksDialog(app_state) { transient_for = this }.present();
 		}
 		
 		private MenuModel build_window_menu() {
@@ -179,7 +185,7 @@ namespace Notes.Widgets {
 			menu.append_section(_("Notebooks"), section2);
 
 			// TODO: Notebooks needs to be stored separately.
-			var notebooks = state.notebooks;
+			var notebooks = app_state.notebooks;
 			for (int i = 0; i < notebooks.get_n_items(); i++) {
 				var notebook = (Models.Notebook) notebooks.get_item(i);
 
@@ -248,7 +254,7 @@ namespace Notes.Widgets {
 			var notebooks_popover = new Gtk.PopoverMenu.from_model(create_notebooks_menu());
 			notebooks_popover.set_parent(this);
 			// Update menu any time the # of notebooks changes.
-			state.notebooks.items_changed.connect(() => {
+			app_state.notebooks.items_changed.connect(() => {
 				notebooks_popover.menu_model = create_notebooks_menu();
 			});
 
@@ -268,7 +274,7 @@ namespace Notes.Widgets {
 			
 			// SideBar Content
 			
-			var sidebar_content = new SideBar(state);
+			var sidebar_content = new SideBar(app_state, state);
 			sidebar_box.append(sidebar_content);
 			
 			// Separator
@@ -298,6 +304,11 @@ namespace Notes.Widgets {
 				icon_name = "view-more-symbolic",
 			};
 			content_header.pack_end(menu_btn);
+			state.bind_property("active-note", menu_btn, "sensitive", GLib.BindingFlags.SYNC_CREATE, 
+				(_, f, ref t) => { 
+					t.set_boolean((((Models.Note?) f) != null));
+					return true;
+				}, null);
 			
 			var note_actions_popover = new Gtk.PopoverMenu.from_model(Widgets.create_note_actions_menu());
 			menu_btn.popover = note_actions_popover;
@@ -305,7 +316,7 @@ namespace Notes.Widgets {
 			
 			content_box.append(content_header);
 
-			var content = new Editor(state);
+			var content = new Editor(app_state, state);
 			content_box.append(content);
 
 			// Open editor page when active note changes.

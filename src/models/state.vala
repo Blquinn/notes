@@ -20,16 +20,43 @@ namespace Notes.Models {
     public const string NOTEBOOK_ALL_NOTES = _("All Notes");
     public const string NOTEBOOK_TRASH = _("Trash");
 
+    public class WindowState : Object {
+        public unowned AppState app_state { get; construct; }
+        public unowned Gtk.Window window { get; construct; }
+
+        public string active_notebook { get; set; default = NOTEBOOK_ALL_NOTES; }
+        public Note? active_note { get; set; }
+
+        public WindowState(AppState app_state, Gtk.Window window) {
+            Object(window: window, app_state: app_state);
+        }
+    }
+
     public class AppState : Object {
+        private unowned Application application;
+
         // Signal is called when a note moves between notebooks, or changes
         // trash, or pinned states.
         public signal void note_moved();
         
-        public Note? active_note { get; set; }
+        //  public Note? active_note { get; set; }
+        //  public string active_notebook { get; set; default = NOTEBOOK_ALL_NOTES; }
         public ListStore notes { get; default = new ListStore(typeof(Note)); }
         public ListStore notebooks { get; default = new ListStore(typeof(Notebook)); }
+        //  public List<WindowState> windows { get; default = new List<WindowState>(); }
 
-        public string active_notebook { get; set; default = NOTEBOOK_ALL_NOTES; }
+        public AppState(Application app) {
+            this.application = app;
+        }
+
+        private Widgets.Window? get_active_window() {
+            var win = this.application.get_active_window();
+            return win == null ? null : (Widgets.Window) win;
+        }
+
+        private WindowState? get_active_window_state() {
+            return get_active_window()?.state;
+        }
 
         public void add_notebook(Notebook notebook) {
             notebooks.insert_sorted(notebook, (a, b) => {
@@ -53,7 +80,10 @@ namespace Notes.Models {
 
         public void add_note(Note note) {
             notes.insert_sorted(note, notes_sort);
-            active_note = note;
+
+            var win_state = get_active_window_state();
+            if (win_state != null)
+                win_state.active_note = note;
         }
 
         public static int notes_sort(Object a, Object b) {
