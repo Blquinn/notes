@@ -10,6 +10,9 @@
             "name": "Debug Notes",
             "target": "./build/src/notes",
             "cwd": "${workspaceRoot}",
+            "env": {
+                "G_DEBUG": "fatal-criticals"
+            },
             "valuesFormatting": "parseText"
         }
     ]

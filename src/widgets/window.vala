@@ -127,6 +127,7 @@ namespace Notes.Widgets {
 			action.set_state(size);
 		}
 
+		// TODO: Make sure active notebook label updates correctly.
 		private void on_change_notebook(SimpleAction action, Variant? notebook) {
 			var nb = notebook.get_string();
 			debug("Changing active notebook to %s", nb);
@@ -254,8 +255,9 @@ namespace Notes.Widgets {
 			var notebooks_popover = new Gtk.PopoverMenu.from_model(create_notebooks_menu());
 			notebooks_popover.set_parent(this);
 			// Update menu any time the # of notebooks changes.
-			app_state.notebooks.items_changed.connect(() => {
+			app_state.notebook_changed.connect(() => {
 				notebooks_popover.menu_model = create_notebooks_menu();
+				notebooks_dropdown_btn_lbl.label = state.active_notebook;
 			});
 
 			notebooks_dropdown_btn.clicked.connect(() => {

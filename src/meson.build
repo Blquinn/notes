@@ -3,6 +3,7 @@ notes_sources = [
   'application.vala',
 
   'models/db.vala',
+  'models/notebook.vala',
   'models/note.vala',
   'models/state.vala',
 

@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+// TODO: Fix issue where context menu selects next row for some reason.
+
 namespace Notes.Widgets {
     public class NoteListItem : Gtk.Box {
         const string default_title = _("New Note");

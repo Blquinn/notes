@@ -38,15 +38,14 @@ namespace Notes.Models {
         // Signal is called when a note moves between notebooks, or changes
         // trash, or pinned states.
         public signal void note_moved();
+        public signal void notebook_changed();
         
-        //  public Note? active_note { get; set; }
-        //  public string active_notebook { get; set; default = NOTEBOOK_ALL_NOTES; }
         public ListStore notes { get; default = new ListStore(typeof(Note)); }
         public ListStore notebooks { get; default = new ListStore(typeof(Notebook)); }
-        //  public List<WindowState> windows { get; default = new List<WindowState>(); }
 
         public AppState(Application app) {
             this.application = app;
+            this.notebooks.items_changed.connect(() => notebook_changed());
         }
 
         private Widgets.Window? get_active_window() {
@@ -96,32 +95,55 @@ namespace Notes.Models {
         }
 
         construct {
-            var nb = new Notebook() { name = "Astronomy" };
+            var nb = new Notebook(this) { name = "Astronomy" };
             add_notebook(nb);
-            add_notebook(new Notebook() { name = "Personal" });
-            add_notebook(new Notebook() { name = "Work" });
+            add_notebook(new Notebook(this) { name = "Personal" });
+            add_notebook(new Notebook(this) { name = "Work" });
 
-            notes.append(new Models.Note(this) {
-                title = "Hello lk2lkj3kjl 32kjl32rjkl 32rjk l23jrlj kl kjjkl",
-                body_buffer = new Gtk.TextBuffer(null) {
+            notes.append(new Models.Note(this,
+                "Hello lk2lkj3kjl 32kjl32rjkl 32rjk l23jrlj kl kjjkl",
+                nb,
+                null,
+                new DateTime.now_local(),
+                false,
+                new Gtk.TextBuffer(null) {
                     text = "ljkaklk3 jlkk3lj2kjl 23jk aslkkl k1",
-                },
-                notebook = nb,
-            });
-            notes.append(new Models.Note(this) {
-                title = "World",
-                body_buffer = new Gtk.TextBuffer(null) {
+                }
+            ));
+            notes.append(new Models.Note(this,
+                "World",
+                null,
+                null,
+                new DateTime(new TimeZone.local(), 2017, 3, 10, 13, 45, 0),
+                false,
+                new Gtk.TextBuffer(null) {
                     text = "lkj23kjl23 lkkj l234jkl2jkl3 kjl jkl12klj21kljlkj213lkj23kjl 23kl j123lkjljk12ljk ",
-                },
-                updated_at = new DateTime(new TimeZone.local(), 2017, 5, 20, 13, 45, 0),
-            });
-            notes.append(new Models.Note(this) {
-                title = "Blah",
-                body_buffer = new Gtk.TextBuffer(null) {
-                    text = "Blee Bloop.",
-                },
-                updated_at = new DateTime(new TimeZone.local(), 2022, 3, 10, 13, 45, 0),
-            });
+                }
+            ));
+            notes.append(new Models.Note(this,
+                "Blah",
+                null,
+                null,
+                new DateTime(new TimeZone.local(), 2022, 3, 10, 13, 45, 0),
+                false,
+                new Gtk.TextBuffer(null) {
+                    text = "Blee bloop",
+                }
+            ));
+            //  notes.append(new Models.Note(this) {
+            //      title = "World",
+            //      body_buffer = new Gtk.TextBuffer(null) {
+            //          text = "lkj23kjl23 lkkj l234jkl2jkl3 kjl jkl12klj21kljlkj213lkj23kjl 23kl j123lkjljk12ljk ",
+            //      },
+            //      updated_at = new DateTime(new TimeZone.local(), 2017, 5, 20, 13, 45, 0),
+            //  });
+            //  notes.append(new Models.Note(this) {
+            //      title = "Blah",
+            //      body_buffer = new Gtk.TextBuffer(null) {
+            //          text = "Blee Bloop.",
+            //      },
+            //      updated_at = new DateTime(new TimeZone.local(), 2022, 3, 10, 13, 45, 0),
+            //  });
         }
     }
 }

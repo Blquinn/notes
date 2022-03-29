@@ -1,29 +1,35 @@
 namespace Notes.Util {
-    //  public class Debouncer<A> {
-    //      public delegate void DebounceCallback<A>(A arg);
+    public class Debouncer {
+        public signal void callback();
 
-    //      private int timeout;
-    //      private uint timeout_source = -1;
-    //      private DebounceCallback<A> callback;
+        private uint timeout;
+        private uint? timeout_source = null;
 
-    //      public Debouncer(int timeout, DebounceCallback<A> callback) {
-    //          this.timeout = timeout;
-    //          this.callback = callback;
-    //      }
+        public Debouncer(uint timeout) {
+            this.timeout = timeout;
+        }
 
-    //      private void invoke_callback(A arg) {
-    //          timeout_source = -1;
-    //          this.callback(arg);
-    //      }
+        ~Debouncer() {
+            remove_timeout();
+        }
 
-    //      public void call<A>(A arg) {
-    //          if (timeout_source > -1)
-    //              Source.remove(timeout_source);
+        private void invoke_callback() {
+            timeout_source = null;
+            callback();
+        }
 
-    //          timeout_source = Timeout.add_full(Priority.DEFAULT, timeout, () => {
-    //              invoke_callback(arg);
-    //              return false;
-    //          });
-    //      }
-    //  }
+        private void remove_timeout() {
+            if (timeout_source != null)
+                Source.remove(timeout_source);
+        }
+
+        public void call() {
+            remove_timeout();
+
+            timeout_source = Timeout.add_full(Priority.DEFAULT, timeout, () => {
+                invoke_callback();
+                return false;
+            });
+        }
+    }
 }

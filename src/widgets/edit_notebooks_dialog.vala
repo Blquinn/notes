@@ -38,10 +38,16 @@ namespace Notes.Widgets {
 
         private void build_ui() {
             var edit_name_entry = new Gtk.Entry() {
-                //  placeholder_text = _("Notebook name..."),
                 hexpand = true,
             };
             edit_name_entry.buffer.set_text((uint8[]) notebook.name);
+            edit_name_entry.activate.connect(() => {
+                debug("Notebook name entry editing done.");
+                if (edit_name_entry.text == "")
+                    return;
+                
+                notebook.name = edit_name_entry.text;
+            });
             append(edit_name_entry);
 
             var delete_notebook_btn = new Gtk.Button() {
@@ -101,7 +107,7 @@ namespace Notes.Widgets {
                 if (new_notebook_entry.text == "")
                     return;
 
-                state.add_notebook(new Models.Notebook() { name = new_notebook_entry.text });
+                state.add_notebook(new Models.Notebook(state) { name = new_notebook_entry.text });
                 new_notebook_entry.text = "";
             });
             new_notebook_box.append(new_notebook_btn);
