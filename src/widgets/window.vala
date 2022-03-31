@@ -99,7 +99,8 @@ namespace Notes.Widgets {
 				transient_for = this,
 			}.present();
 		}
-		
+	
+		// TODO: Select top displayed note from notes list after note is moved to trash.
 		private void on_active_note_move_to_trash() {
 			debug("Moving active not to trash.");
 
