@@ -20,15 +20,55 @@ namespace Notes.Models {
     public const string NOTEBOOK_ALL_NOTES = _("All Notes");
     public const string NOTEBOOK_TRASH = _("Trash");
 
+    public class ActiveNotebookVariant {
+        Notebook? notebook;
+        string? other; // TODO: Rename this
+
+        private ActiveNotebookVariant(Notebook? notebook, string? other) {
+            this.notebook = notebook;
+            this.other = other;
+        }
+
+        public static ActiveNotebookVariant from_notebook(Notebook nb) {
+            return new ActiveNotebookVariant(nb, null);
+        }
+
+        public static ActiveNotebookVariant trash() {
+            return new ActiveNotebookVariant(null, NOTEBOOK_TRASH);
+        }
+
+        public static ActiveNotebookVariant all_notes() {
+            return new ActiveNotebookVariant(null, NOTEBOOK_ALL_NOTES);
+        }
+
+        public string to_string() {
+            return notebook != null ? notebook.name : other;
+        }
+
+        public bool is_trash() {
+            return other != null && other == NOTEBOOK_TRASH;
+        }
+
+        public bool is_all_notes() {
+            return other != null && other == NOTEBOOK_ALL_NOTES;
+        }
+        
+        public bool is_notebook() {
+            return notebook != null;
+        }
+    }
+
     public class WindowState : Object {
         public unowned AppState app_state { get; construct; }
         public unowned Gtk.Window window { get; construct; }
 
-        public string active_notebook { get; set; default = NOTEBOOK_ALL_NOTES; }
+        //  public string active_notebook { get; set; default = NOTEBOOK_ALL_NOTES; }
+        // Notebook | string
+        public ActiveNotebookVariant active_notebook { get; set; }
         public Note? active_note { get; set; }
 
         public WindowState(AppState app_state, Gtk.Window window) {
-            Object(window: window, app_state: app_state);
+            Object(window: window, app_state: app_state, active_notebook: Models.ActiveNotebookVariant.all_notes());
         }
     }
 
@@ -95,10 +135,10 @@ namespace Notes.Models {
         }
 
         construct {
-            var nb = new Notebook(this) { name = "Astronomy" };
+            var nb = new Notebook(this, "Astronomy");
             add_notebook(nb);
-            add_notebook(new Notebook(this) { name = "Personal" });
-            add_notebook(new Notebook(this) { name = "Work" });
+            add_notebook(new Notebook(this, "Personal"));
+            add_notebook(new Notebook(this, "Work"));
 
             notes.append(new Models.Note(this,
                 "Hello lk2lkj3kjl 32kjl32rjkl 32rjk l23jrlj kl kjjkl",

@@ -80,7 +80,7 @@ namespace Notes.Widgets {
             new_notebook_btn.clicked.connect(() => {
                 if (new_notebook_entry.text == "")
                     return;
-                state.add_notebook(new Models.Notebook(state) { name = new_notebook_entry.text });
+                state.add_notebook(new Models.Notebook(state, new_notebook_entry.text));
                 new_notebook_entry.text = "";
             });
             new_notebook_entry.bind_property("text", new_notebook_btn, "sensitive", GLib.BindingFlags.DEFAULT, (_, f, ref t) => {

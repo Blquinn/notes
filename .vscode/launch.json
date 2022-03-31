@@ -13,7 +13,8 @@
             "env": {
                 "G_DEBUG": "fatal-criticals"
             },
-            "valuesFormatting": "parseText"
+            "valuesFormatting": "parseText",
+            "preLaunchTask": "Meson: Build all targets"
         }
     ]
 }

@@ -36,6 +36,7 @@ namespace Notes.Widgets {
 		};
 
 		private Gtk.Label notebooks_dropdown_btn_lbl;
+		private Binding active_notebook_lbl_binding;
 
 		public Window(Notes.Application app, Models.AppState app_state) {
 			Object(application: app);
@@ -131,9 +132,30 @@ namespace Notes.Widgets {
 		private void on_change_notebook(SimpleAction action, Variant? notebook) {
 			var nb = notebook.get_string();
 			debug("Changing active notebook to %s", nb);
+
 			action.set_state(nb);
+
+			// TODO: Change this reactively
 			notebooks_dropdown_btn_lbl.label = nb;
-			state.active_notebook = nb;
+
+			if (nb == Models.NOTEBOOK_TRASH) {
+				state.active_notebook = Models.ActiveNotebookVariant.trash();
+			} else if (nb == Models.NOTEBOOK_ALL_NOTES) {
+				state.active_notebook = Models.ActiveNotebookVariant.all_notes();
+			} else {
+				// Find notebook by name
+				Models.Notebook nb_obj = null;
+				for (var i = 0; i < app_state.notebooks.get_n_items(); i++) {
+					var list_nb = (Models.Notebook) app_state.notebooks.get_item(i);
+					if (list_nb.name == nb) {
+						nb_obj = list_nb;
+						break;
+					}
+				}
+				if (nb_obj == null)
+					error("Didn't find notebook object for notebook %s.", nb);
+				state.active_notebook = Models.ActiveNotebookVariant.from_notebook(nb_obj);
+			}
 		}
 
 		private void on_open_edit_notebooks() {
@@ -207,6 +229,18 @@ namespace Notes.Widgets {
 			
 			return menu;
 		}
+
+		private void bind_active_notebook_label() {
+			if (active_notebook_lbl_binding != null)
+				active_notebook_lbl_binding.unbind();
+
+			active_notebook_lbl_binding = state.bind_property("active-notebook", notebooks_dropdown_btn_lbl, "label", BindingFlags.SYNC_CREATE, 
+				(_, f, ref t) => {
+					var nb = (Models.ActiveNotebookVariant) f;
+					t.set_string(nb.to_string());
+					return true;
+				}, null);
+		}
 		
 		private void build_ui() {
 			this.default_height = 700;
@@ -254,11 +288,6 @@ namespace Notes.Widgets {
 			// TODO: When a notebook is added or removed, update this menu.
 			var notebooks_popover = new Gtk.PopoverMenu.from_model(create_notebooks_menu());
 			notebooks_popover.set_parent(this);
-			// Update menu any time the # of notebooks changes.
-			app_state.notebook_changed.connect(() => {
-				notebooks_popover.menu_model = create_notebooks_menu();
-				notebooks_dropdown_btn_lbl.label = state.active_notebook;
-			});
 
 			notebooks_dropdown_btn.clicked.connect(() => {
 				debug("Creating notebooks popover.");
@@ -273,6 +302,13 @@ namespace Notes.Widgets {
 			down_arrow_icon.set_from_icon_name("pan-down-symbolic");
 			notes_dropdown_btn_box.append(down_arrow_icon);
 			sidebar_header.title_widget = notebooks_dropdown_btn;
+
+			// Update menu any time the # of notebooks changes.
+			bind_active_notebook_label();
+			app_state.notebook_changed.connect(() => {
+				notebooks_popover.menu_model = create_notebooks_menu();
+				bind_active_notebook_label();
+			});
 			
 			// SideBar Content
 			

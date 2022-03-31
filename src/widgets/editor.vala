@@ -86,6 +86,7 @@ namespace Notes.Widgets {
             title_entry.enable_undo = false;
             title_entry.enable_undo = true;
 
+            // TODO: When the notebook changes it's name, this label has to update.
             notebook_name_binding = note.bind_property("notebook", notebook_name_lbl, "label", BindingFlags.DEFAULT | BindingFlags.SYNC_CREATE, 
                 (_, f, ref t) => { 
                     var notebook = (Models.Notebook?) f;

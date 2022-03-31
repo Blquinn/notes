@@ -19,22 +19,23 @@
 namespace Notes.Models {
     public class Notebook : Object {
         private unowned AppState state;
-        private Util.Debouncer update_debouncer;
+        private Util.Debouncer? update_debouncer;
 
         private string _name;
         public string name { 
             get { return _name; }
             set {
                 _name = value;
-                update_debouncer.call();
-                state.notebook_changed();
+                if (update_debouncer != null) update_debouncer.call();
+                if (state != null) state.notebook_changed();
             } 
         }
 
-        public Notebook(AppState state) {
+        public Notebook(AppState state, string name) {
+            Object(name: name);
+            this.state = state;
             this.update_debouncer = new Util.Debouncer(300);
             this.update_debouncer.callback.connect(on_debounced_update);
-            this.state = state;
         }
 
         private void on_debounced_update() {

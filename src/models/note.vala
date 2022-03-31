@@ -32,7 +32,6 @@ namespace Notes.Models {
         public Notebook? notebook { 
             get { return _notebook; } 
             set {
-                debug("setting nb %s", (update_debouncer == null).to_string());
                 _notebook = value;
                 if (state != null) state.note_moved();
                 if (update_debouncer != null) update_debouncer.call();
@@ -44,7 +43,6 @@ namespace Notes.Models {
         public DateTime? deleted_at { 
             get { return _deleted_at; }
             set {
-                debug("setting deleted at");
                 _deleted_at = value;
                 if (state != null) state.note_moved();
                 if (update_debouncer != null) update_debouncer.call();
@@ -57,7 +55,6 @@ namespace Notes.Models {
         public bool is_pinned { 
             get { return _is_pinned; }
             set {
-                //  debug("setting deleted at");
                 _is_pinned = value;
                 if (state != null) state.note_moved();
                 if (update_debouncer != null) update_debouncer.call();
@@ -68,7 +65,6 @@ namespace Notes.Models {
         public string title { 
             get { return _title; }
             set {
-                debug("setting deleted at");
                 _title = value;
                 if (update_debouncer != null) update_debouncer.call();
             }

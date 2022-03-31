@@ -145,19 +145,20 @@ namespace Notes.Widgets {
             if (filter.length > 0 && !note.title.down().contains(filter.down()))
                 return false;
 
-            if (win_state.active_notebook == Models.NOTEBOOK_TRASH)
+            var anb = win_state.active_notebook;
+            if (anb.is_trash())
                 return note.deleted_at != null;
 
             if (note.deleted_at != null)
                 return false;            
             
+            if (anb.is_all_notes())
+                return true;
+
             // TODO: Switch to using notebooks primary keys.
-            var anb = win_state.active_notebook;
             string? notebook_name = note.notebook != null ? note.notebook.name : null;
-            if (anb != Models.NOTEBOOK_ALL_NOTES && notebook_name != anb)
-                return false;
-            
-            return true;
+            var anb_obj = (Models.ActiveNotebookVariant) anb;
+            return notebook_name == anb_obj.to_string();
         }
 
         private void note_header_func(Gtk.ListBoxRow row, Gtk.ListBoxRow? before) {
