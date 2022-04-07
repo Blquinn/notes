@@ -21,12 +21,10 @@ namespace Notes.Models {
     public class Note : Object {
         private unowned AppState state;
 
+        public int id { get; set; default = -1; }
+
         // Debouncer to eventually persist note to db.
-        //  private Util.Debouncer? update_debouncer;
         private Util.Debouncer update_debouncer;
-        //      get;
-        //      default = new Util.Debouncer(300);
-        //  }
 
         private Notebook? _notebook;
         public Notebook? notebook { 
@@ -82,7 +80,7 @@ namespace Notes.Models {
         }
 
         public Note(
-            AppState state, 
+            AppState? state, 
             string title = "",
             Notebook? notebook = null, 
             DateTime? deleted_at = null,
@@ -109,9 +107,14 @@ namespace Notes.Models {
 
             Idle.add(() => {
                 updated_at = new DateTime.now_local();
-                state.note_moved();
                 // TODO: Update note preview.
-                // TODO: Save note in db.
+                try {
+                    state.note_dao.save(this);
+                } catch (Error e) {
+                    warning("Failed to save note in db: %s", e.message);
+                }
+
+                state.note_moved();
                 return Source.REMOVE;
             }, Priority.DEFAULT);
         }

@@ -1,4 +1,4 @@
-/* main.vala
+/* dirs.vala
  *
  * Copyright 2022 Benjamin Quinn
  *
@@ -16,8 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-int main (string[] args) {
-	{ new Notes.Util.Dirs(); }
-	var app = new Notes.Application();
-	return app.run(args);
+
+namespace Notes.Util {
+    public class Dirs {
+        static string DATA_DIR = Environment.get_user_data_dir() + "/notes";
+
+        public Dirs() {
+            int mode = (int) (Posix.S_IRUSR | Posix.S_IWUSR | Posix.S_IXUSR);
+            debug("Creating user data dir %s with permissions %d.", DATA_DIR, mode);
+            DirUtils.create(DATA_DIR, mode); 
+        }
+    }
 }

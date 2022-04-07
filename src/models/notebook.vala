@@ -20,6 +20,8 @@ namespace Notes.Models {
     public class Notebook : Object {
         private unowned AppState state;
         private Util.Debouncer? update_debouncer;
+        
+        public int id { get; set; default = -1; }
 
         private string _name;
         public string name { 
@@ -40,7 +42,11 @@ namespace Notes.Models {
 
         private void on_debounced_update() {
             debug("Updating notebook.");
-            // TODO: Save changes to notebook.
+            try {
+                state.notebook_dao.save(this);
+            } catch (Error e) {
+                error("Failed to save notebook: %s", e.message);
+            }
         }
     }
 }

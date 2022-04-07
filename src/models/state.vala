@@ -74,6 +74,8 @@ namespace Notes.Models {
 
     public class AppState : Object {
         private unowned Application application;
+        public NoteDao note_dao { get; set; }
+        public NotebookDao notebook_dao { get; set; }
 
         // Signal is called when a note moves between notebooks, or changes
         // trash, or pinned states.
@@ -86,6 +88,24 @@ namespace Notes.Models {
         public AppState(Application app) {
             this.application = app;
             this.notebooks.items_changed.connect(() => notebook_changed());
+
+			try {
+				var db = new Db();
+				notebook_dao = new NotebookDao(this, db);
+                var notebooks = notebook_dao.find_all();
+                foreach (var nb in notebooks)
+                    this.notebooks.append(nb);
+
+				note_dao = new NoteDao(this, db);
+				var notes = note_dao.find_all(notebooks);
+
+                foreach (var n in notes)
+                    this.notes.append(n);
+
+				debug("Got notes of len %d and notebooks of len %d", notes.length, notebooks.length);
+			} catch (Error e) {
+				error("Failed to initialize database: %s", e.message);
+			}
         }
 
         private Widgets.Window? get_active_window() {
@@ -134,6 +154,7 @@ namespace Notes.Models {
             return comp;
         }
 
+        /*
         construct {
             var nb = new Notebook(this, "Astronomy");
             add_notebook(nb);
@@ -170,20 +191,7 @@ namespace Notes.Models {
                     text = "Blee bloop",
                 }
             ));
-            //  notes.append(new Models.Note(this) {
-            //      title = "World",
-            //      body_buffer = new Gtk.TextBuffer(null) {
-            //          text = "lkj23kjl23 lkkj l234jkl2jkl3 kjl jkl12klj21kljlkj213lkj23kjl 23kl j123lkjljk12ljk ",
-            //      },
-            //      updated_at = new DateTime(new TimeZone.local(), 2017, 5, 20, 13, 45, 0),
-            //  });
-            //  notes.append(new Models.Note(this) {
-            //      title = "Blah",
-            //      body_buffer = new Gtk.TextBuffer(null) {
-            //          text = "Blee Bloop.",
-            //      },
-            //      updated_at = new DateTime(new TimeZone.local(), 2022, 3, 10, 13, 45, 0),
-            //  });
         }
+        */
     }
 }

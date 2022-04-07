@@ -7,6 +7,7 @@ notes_sources = [
   'models/note.vala',
   'models/state.vala',
 
+  'util/dirs.vala',
   'util/debounce.vala',
 
   'widgets/window.vala',
@@ -21,6 +22,7 @@ notes_deps = [
   dependency('gtk4', required: true),
   dependency('sqlite3', required: true),
   dependency('libadwaita-1', required: true),
+  meson.get_compiler('vala').find_library('posix'),
 ]
 
 gnome = import('gnome')
