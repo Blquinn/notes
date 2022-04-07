@@ -72,6 +72,7 @@ namespace Notes.Widgets {
             append(title_row);
 
             note_preview_lbl = new Gtk.Label(note.body_preview);
+            note.bind_property("body-preview", note_preview_lbl, "label", BindingFlags.SYNC_CREATE);
             note_preview_lbl.add_css_class("caption");
             note_preview_lbl.max_width_chars = 25;
             note_preview_lbl.halign = Gtk.Align.START;

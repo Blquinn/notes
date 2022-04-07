@@ -69,14 +69,16 @@ namespace Notes.Models {
         }
 
         public Gtk.TextBuffer body_buffer { get; set; default = new Gtk.TextBuffer(null); }
-        public string body_preview { 
-            owned get {
-                Gtk.TextIter start;
-                Gtk.TextIter end;
-                body_buffer.get_start_iter(out start);
-                body_buffer.get_iter_at_offset(out end, 75);
-                return body_buffer.get_text(start, end, false);
-            } 
+
+        public string body_preview { get; private set; }
+
+        private string format_body_preview() {
+            Gtk.TextIter start;
+            Gtk.TextIter end;
+            body_buffer.get_start_iter(out start);
+            body_buffer.get_iter_at_offset(out end, 75);
+            var preview_text = body_buffer.get_text(start, end, false);
+            return preview_text.strip().replace("\n", "⏎");
         }
 
         public Note(
@@ -100,6 +102,9 @@ namespace Notes.Models {
             this.update_debouncer = new Util.Debouncer(300); 
             this.update_debouncer.callback.connect(on_debounced_update);
             this.body_buffer.changed.connect(update_debouncer.call);
+            this.body_preview = format_body_preview();
+
+            //  debug("new note body %s PREVIEW %s", body_buffer.text, format_body_preview());
         }
 
         private void on_debounced_update() {
@@ -114,6 +119,7 @@ namespace Notes.Models {
                     warning("Failed to save note in db: %s", e.message);
                 }
 
+                this.body_preview = format_body_preview();
                 state.note_moved();
                 return Source.REMOVE;
             }, Priority.DEFAULT);
