@@ -12,6 +12,7 @@ notes_sources = [
 
   'widgets/window.vala',
   'widgets/side_bar.vala',
+  'widgets/rich_text_editor.vala',
   'widgets/editor.vala',
   'widgets/edit_notebooks_dialog.vala',
   'widgets/move_note_dialog.vala',

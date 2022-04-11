@@ -142,7 +142,9 @@ namespace Notes.Widgets {
             
             var note_details_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             // TODO: Source this from somewhere.
-            last_updated_lbl = new Gtk.Label(null);
+            last_updated_lbl = new Gtk.Label(null) {
+                css_classes = {"dim-label"},
+            };
             note_details_box.append(last_updated_lbl);
             
             var change_nb_btn = new Gtk.Button();
@@ -152,9 +154,12 @@ namespace Notes.Widgets {
             var change_nb_btn_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             var nb_icon = new Gtk.Image() {
                 icon_name = "accessories-text-editor-symbolic",
+                css_classes = {"dim-label"},
             };
             change_nb_btn_box.append(nb_icon);
-            notebook_name_lbl = new Gtk.Label(null);
+            notebook_name_lbl = new Gtk.Label(null) {
+                css_classes = {"dim-label"},
+            };
             change_nb_btn_box.append(notebook_name_lbl);
             change_nb_btn.child = change_nb_btn_box;
             note_details_box.append(change_nb_btn);
@@ -173,7 +178,7 @@ namespace Notes.Widgets {
             //  buf.create_tag("ul", 
             //      "left-margin", 8);
             //  buf.create_tag("li", 
-            //      "left-margin", 8);
+                //  "left-margin", 8);
             
             //  edit.buffer.text = "Some text ";
             
@@ -182,10 +187,101 @@ namespace Notes.Widgets {
             //  edit.buffer.insert_markup(ref iter, "<i>Italic text. </i>", -1);
             //  edit.buffer.insert_markup(ref iter, "<b>Bold text. </b>\n", -1);
             //  edit.buffer.insert_with_tags_by_name(ref iter, "1. Unordered list.", -1, "ul", "li"); 
-            
+
             contents_box.append(new Gtk.ScrolledWindow() {
                 child = note_text,
             });
+
+            editor_box.append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
+
+            editor_box.append(new EditorToolbar());
+        }
+    }
+
+    public class EditorToolbar : Gtk.Box {
+        public EditorToolbar() {
+            Object(
+                orientation: Gtk.Orientation.HORIZONTAL, 
+                spacing: 0
+            );
+            css_classes = {"background"};
+        }
+
+        construct {
+
+            // TODO: Why is there additional spacing after the left-most child?
+
+            var inner_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8) {
+                halign = Gtk.Align.CENTER,
+                hexpand = true,
+                valign = Gtk.Align.CENTER,
+                margin_top = 4,
+                margin_bottom = 4,
+            };
+            append(inner_box);
+
+            // Text weight
+
+            var text_weight_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                css_classes = {"linked"}
+            };
+            inner_box.append(text_weight_box);
+
+            var bold_button = new Gtk.ToggleButton() {
+                icon_name = "format-text-bold-symbolic",
+            };
+            text_weight_box.append(bold_button);
+            var italic_button = new Gtk.ToggleButton() {
+                icon_name = "format-text-italic-symbolic",
+            };
+            text_weight_box.append(italic_button);
+            var underline_button = new Gtk.ToggleButton() {
+                icon_name = "format-text-underline-symbolic",
+            };
+            text_weight_box.append(underline_button);
+            var strikethrough_button = new Gtk.ToggleButton() {
+                icon_name = "format-text-strikethrough-symbolic"
+            };
+            text_weight_box.append(strikethrough_button);
+
+            var text_alignment_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                css_classes = {"linked"}
+            };
+            inner_box.append(text_alignment_box);
+
+            // Lists buttons
+
+            var lists_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                css_classes = {"linked"}
+            };
+            inner_box.append(lists_box);
+
+            var unordered_list_btn = new Gtk.ToggleButton() {
+                icon_name = "view-list-symbolic"
+            };
+            lists_box.append(unordered_list_btn);
+
+            var ordered_list_btn = new Gtk.ToggleButton() {
+                icon_name = "view-list-symbolic"
+            };
+            lists_box.append(ordered_list_btn);
+
+            // Indent buttons
+
+            var indent_levels_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                css_classes = {"linked"}
+            };
+            inner_box.append(indent_levels_box);
+
+            var right_indent_btn = new Gtk.Button() {
+                icon_name = "format-indent-more-symbolic"
+            };
+            indent_levels_box.append(right_indent_btn);
+
+            var left_indent_btn = new Gtk.Button() {
+                icon_name = "format-indent-less-symbolic"
+            };
+            indent_levels_box.append(left_indent_btn);
         }
     }
 }

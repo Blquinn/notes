@@ -68,7 +68,7 @@ namespace Notes.Models {
             }
         }
 
-        public Gtk.TextBuffer body_buffer { get; set; default = new Gtk.TextBuffer(null); }
+        public Gtk.TextBuffer body_buffer { get; set; }
 
         public string body_preview { get; private set; }
 

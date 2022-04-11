@@ -145,9 +145,18 @@ namespace Notes.Models {
         private unowned AppState state;
         private Db db;
 
+        //  private Gtk.TextTagTable tag_table;
+
         public NoteDao(AppState state, Db db) {
             this.state = state;
             this.db = db;
+
+            //  tag_table = new Gtk.TextTagTable();
+            //  var p_tag = new Gtk.TextTag("p");
+            //  //  p_tag.
+            //  //  p_tag.left_margin = 8;
+            //  p_tag.indent = 1;
+            //  tag_table.add(p_tag);
         }
 
         public GenericArray<Note> find_all(GenericArray<Notebook> notebooks) throws DbError {
@@ -173,8 +182,13 @@ namespace Notes.Models {
                     deleted_at = new DateTime.from_unix_local(da_unix);
                 }
 
-                // TODO: Supply tag table.
+                //  var tag_table = new Gtk.TextTagTable();
+                //  var p_tag = new Gtk.TextTag("pgph");
+                //  p_tag.left_margin = 8;
+                //  tag_table.add(p_tag);
                 var tb = new Gtk.TextBuffer(null);
+                tb.create_tag("p", "indent", 1);
+
                 Gtk.TextIter iter;
                 tb.get_start_iter(out iter);
                 var note_contents = stmt.column_text(2);
@@ -195,6 +209,12 @@ namespace Notes.Models {
         public void save(Note note) throws DbError {
             var notebook_id = note.notebook?.id;
 
+            Gtk.TextIter start_iter;
+            Gtk.TextIter end_iter;
+            note.body_buffer.get_start_iter(out start_iter);
+            note.body_buffer.get_end_iter(out end_iter);
+            var buffer_markup = note.body_buffer.get_text(start_iter, end_iter, true);
+
             // TODO: Serialize text buffer with tags (some kind of markup).
             if (note.id > 0) {
                 db.execute(""" 
@@ -205,7 +225,7 @@ namespace Notes.Models {
                 """, (stmt) => {
                     bind_nullable_int(stmt, 1, notebook_id);
                     stmt.bind_text(2, note.title);
-                    stmt.bind_text(3, note.body_buffer.text);
+                    stmt.bind_text(3, buffer_markup);
                     bind_nullable_int64(stmt, 4, note.deleted_at?.to_unix());
                     stmt.bind_int(5, (int)note.is_pinned);
                     stmt.bind_int64(6, note.updated_at.to_unix());
@@ -221,7 +241,7 @@ namespace Notes.Models {
             """, (stmt) => {
                 bind_nullable_int(stmt, 1, notebook_id);
                 stmt.bind_text(2, note.title);
-                stmt.bind_text(3, note.body_buffer.text);
+                stmt.bind_text(3, buffer_markup);
                 bind_nullable_int64(stmt, 4, note.deleted_at?.to_unix());
                 stmt.bind_int(5, (int)note.is_pinned);
                 stmt.bind_int64(6, note.updated_at.to_unix());

@@ -153,45 +153,5 @@ namespace Notes.Models {
                 comp = b_note.updated_at.compare(a_note.updated_at);
             return comp;
         }
-
-        /*
-        construct {
-            var nb = new Notebook(this, "Astronomy");
-            add_notebook(nb);
-            add_notebook(new Notebook(this, "Personal"));
-            add_notebook(new Notebook(this, "Work"));
-
-            notes.append(new Models.Note(this,
-                "Hello lk2lkj3kjl 32kjl32rjkl 32rjk l23jrlj kl kjjkl",
-                nb,
-                null,
-                new DateTime.now_local(),
-                false,
-                new Gtk.TextBuffer(null) {
-                    text = "ljkaklk3 jlkk3lj2kjl 23jk aslkkl k1",
-                }
-            ));
-            notes.append(new Models.Note(this,
-                "World",
-                null,
-                null,
-                new DateTime(new TimeZone.local(), 2017, 3, 10, 13, 45, 0),
-                false,
-                new Gtk.TextBuffer(null) {
-                    text = "lkj23kjl23 lkkj l234jkl2jkl3 kjl jkl12klj21kljlkj213lkj23kjl 23kl j123lkjljk12ljk ",
-                }
-            ));
-            notes.append(new Models.Note(this,
-                "Blah",
-                null,
-                null,
-                new DateTime(new TimeZone.local(), 2022, 3, 10, 13, 45, 0),
-                false,
-                new Gtk.TextBuffer(null) {
-                    text = "Blee bloop",
-                }
-            ));
-        }
-        */
     }
 }
