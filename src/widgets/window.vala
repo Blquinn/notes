@@ -249,7 +249,7 @@ namespace Notes.Widgets {
 			this.title = _("Notes");
 			
 			var leaflet = new Adw.Leaflet();
-			leaflet.can_swipe_back = true;
+			// leaflet.can_swipe_back = true;
 			content = leaflet;
 			
 			// Sidebar

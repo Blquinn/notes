@@ -28,7 +28,9 @@ namespace Notes.Widgets {
         private Gtk.Entry title_entry;
         private Gtk.Label notebook_name_lbl;
         private Gtk.Label last_updated_lbl;
-        private Gtk.TextView note_text;
+        // private Gtk.TextView note_text;
+        private WebKit.WebView webview;
+        private WebKit.UserContentManager webview_ucm;
 
         private Binding? title_binding;
         private Binding? last_updated_binding;
@@ -102,7 +104,7 @@ namespace Notes.Widgets {
                     return true; 
                 }, null);
 
-            note_text.buffer = note.body_buffer;
+            // note_text.buffer = note.body_buffer.text;
         }
         
         private void build_ui() {
@@ -166,10 +168,57 @@ namespace Notes.Widgets {
             
             contents_box.append(note_details_box);
             
-            note_text = new Gtk.TextView() {
-                wrap_mode = Gtk.WrapMode.WORD_CHAR,
+            // note_text = new Gtk.TextView() {
+            //    wrap_mode = Gtk.WrapMode.WORD_CHAR,
+            //    vexpand = true,
+            // };
+            webview_ucm = new WebKit.UserContentManager();
+            webview = new WebKit.WebView.with_user_content_manager(webview_ucm) {
                 vexpand = true,
+                //  editable = true,
             };
+
+            //  var quill_stream = GLib.resources_open_stream("/me/blq/notes/js/quill.js", GLib.ResourceLookupFlags.NONE);
+            var quill_stream = GLib.resources_open_stream("/me/blq/notes/js/trix.js", GLib.ResourceLookupFlags.NONE);
+            var quill_bts = quill_stream.read_bytes(int.MAX, null);
+            var quill_script = new WebKit.UserScript(
+                (string) quill_bts.get_data(),
+                WebKit.UserContentInjectedFrames.ALL_FRAMES,
+                WebKit.UserScriptInjectionTime.END,
+                null,
+                null
+            );
+            webview_ucm.add_script(quill_script);
+
+            //  var style = get_style_context();
+            //  Value font_size;
+            //  style.get_property("font-size", ref font_size);
+            //  Value font_size;
+            //  style.get_property("font-family", ref font_size);
+
+            //  var quill_css_stream = GLib.resources_open_stream("/me/blq/notes/js/quill.core.css", GLib.ResourceLookupFlags.NONE);
+            var quill_css_stream = GLib.resources_open_stream("/me/blq/notes/js/trix.css", GLib.ResourceLookupFlags.NONE);
+            var quill_css_bts = quill_css_stream.read_bytes(int.MAX, null);
+            var quill_css = new WebKit.UserStyleSheet(
+                (string) quill_css_bts.get_data(),
+                WebKit.UserContentInjectedFrames.ALL_FRAMES,
+                WebKit.UserStyleLevel.AUTHOR,
+                null,
+                null
+            );
+            webview_ucm.add_style_sheet(quill_css);
+
+
+            //  var html_res = Resource.load("/me/blq/notes");
+            //  var html_stream = html_res.open_stream("/js/editor.html", ResourceLookupFlags.NONE); 
+            var html_stream = GLib.resources_open_stream("/me/blq/notes/js/editor.html", GLib.ResourceLookupFlags.NONE);
+            var html_bts = html_stream.read_bytes(int.MAX, null);
+            // var html = (string) html_bts.get_data();
+
+            webview.load_bytes(html_bts, null, null, null);
+
+
+            // note_text.load_uri("http://www.webkitgtk.org/");
             //  var buf = edit.buffer;
             //  buf.create_tag("b", 
             //      "weight", Pango.Weight.BOLD);
@@ -189,7 +238,7 @@ namespace Notes.Widgets {
             //  edit.buffer.insert_with_tags_by_name(ref iter, "1. Unordered list.", -1, "ul", "li"); 
 
             contents_box.append(new Gtk.ScrolledWindow() {
-                child = note_text,
+                child = webview,
             });
 
             editor_box.append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
