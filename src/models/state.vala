@@ -62,13 +62,19 @@ namespace Notes.Models {
         public unowned AppState app_state { get; construct; }
         public unowned Gtk.Window window { get; construct; }
 
-        //  public string active_notebook { get; set; default = NOTEBOOK_ALL_NOTES; }
-        // Notebook | string
         public ActiveNotebookVariant active_notebook { get; set; }
-        public Note? active_note { get; set; }
+        public Note? active_note { get; private set; }
 
         public WindowState(AppState app_state, Gtk.Window window) {
             Object(window: window, app_state: app_state, active_notebook: Models.ActiveNotebookVariant.all_notes());
+        }
+
+        public signal void active_note_change_request(SourceFunc callback);
+
+        // The editor will connect to this signal and call the callback when the contents
+        // of the editor are retrieved from the webview.
+        public void update_active_note(Note note) {
+            active_note = note;
         }
     }
 
@@ -118,6 +124,11 @@ namespace Notes.Models {
         }
 
         public void add_notebook(Notebook notebook) {
+            try {
+                notebook_dao.save(notebook);
+            } catch (Error e) {
+                error(e.message);
+            }
             notebooks.insert_sorted(notebook, (a, b) => {
                 return ((Notebook) a).name.collate(((Notebook)b).name);
             });
@@ -142,7 +153,7 @@ namespace Notes.Models {
 
             var win_state = get_active_window_state();
             if (win_state != null)
-                win_state.active_note = note;
+                win_state.update_active_note(note);
         }
 
         public static int notes_sort(Object a, Object b) {

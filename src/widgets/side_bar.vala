@@ -93,7 +93,7 @@ namespace Notes.Widgets {
                 Gtk.Allocation alloc;
                 this.get_allocation(out alloc);
                 context_menu.pointing_to = alloc;
-                win_state.active_note = note;
+                win_state.update_active_note(note);
                 context_menu.popup();
             });
             add_controller(click_gesture);
@@ -236,7 +236,7 @@ namespace Notes.Widgets {
                 var row = notes_list.get_selected_row();
                 var note_item = (NoteListItem) row.child;
                 var note = note_item.note;
-                win_state.active_note = note;
+                win_state.update_active_note(note);
             });
             append(notes_list);
         }

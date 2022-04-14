@@ -104,7 +104,33 @@ namespace Notes.Widgets {
                     return true; 
                 }, null);
 
-            // note_text.buffer = note.body_buffer.text;
+            // Set editor state
+            webview.run_javascript.begin(@"loadEditor($(note.id), $(note.editor_state));");
+        }
+
+        private void on_editor_changed(WebKit.JavascriptResult payload) {
+            var val = payload.get_js_value();
+            var note_id = (int) val.object_get_property("noteId").to_int32();
+            var editor_json = val.object_get_property("state").to_string();
+            var editor_text = val.object_get_property("text").to_string();
+            debug("Editor changed. %d, %s, %s", note_id, editor_json, editor_text);
+
+            var note = win_state.active_note;
+            if (note.id == note_id) {
+                note.editor_state = editor_json;
+                note.body_preview = editor_text;
+            } else {
+                for (int i = 0; i < app_state.notes.get_n_items(); i++) {
+                    var n = (Models.Note) app_state.notes.get_item(i);
+                    if (n.id == note_id) {
+                        note.editor_state = editor_json;
+                        note.body_preview = editor_text;
+                        return;
+                    }
+                }
+
+                warning("Note with note_id %d not found.", note_id);
+            }
         }
         
         private void build_ui() {
@@ -168,74 +194,29 @@ namespace Notes.Widgets {
             
             contents_box.append(note_details_box);
             
-            // note_text = new Gtk.TextView() {
-            //    wrap_mode = Gtk.WrapMode.WORD_CHAR,
-            //    vexpand = true,
-            // };
             webview_ucm = new WebKit.UserContentManager();
+            var webview_settings = new WebKit.Settings() {
+                enable_write_console_messages_to_stdout = true
+            };
             webview = new WebKit.WebView.with_user_content_manager(webview_ucm) {
                 vexpand = true,
-                //  editable = true,
+                settings = webview_settings,
             };
 
-            //  var quill_stream = GLib.resources_open_stream("/me/blq/notes/js/quill.js", GLib.ResourceLookupFlags.NONE);
-            var quill_stream = GLib.resources_open_stream("/me/blq/notes/js/trix.js", GLib.ResourceLookupFlags.NONE);
-            var quill_bts = quill_stream.read_bytes(int.MAX, null);
-            var quill_script = new WebKit.UserScript(
-                (string) quill_bts.get_data(),
-                WebKit.UserContentInjectedFrames.ALL_FRAMES,
-                WebKit.UserScriptInjectionTime.END,
-                null,
-                null
-            );
-            webview_ucm.add_script(quill_script);
+            load_script_from_resource("/me/blq/notes/js/trix.js");
+            load_stylesheet_from_resource("/me/blq/notes/js/trix.css");
 
-            //  var style = get_style_context();
-            //  Value font_size;
-            //  style.get_property("font-size", ref font_size);
-            //  Value font_size;
-            //  style.get_property("font-family", ref font_size);
+            // Register script messages.
+            webview_ucm.script_message_received["editorChanged"].connect(on_editor_changed);
+            webview_ucm.register_script_message_handler("editorChanged");
 
-            //  var quill_css_stream = GLib.resources_open_stream("/me/blq/notes/js/quill.core.css", GLib.ResourceLookupFlags.NONE);
-            var quill_css_stream = GLib.resources_open_stream("/me/blq/notes/js/trix.css", GLib.ResourceLookupFlags.NONE);
-            var quill_css_bts = quill_css_stream.read_bytes(int.MAX, null);
-            var quill_css = new WebKit.UserStyleSheet(
-                (string) quill_css_bts.get_data(),
-                WebKit.UserContentInjectedFrames.ALL_FRAMES,
-                WebKit.UserStyleLevel.AUTHOR,
-                null,
-                null
-            );
-            webview_ucm.add_style_sheet(quill_css);
-
-
-            //  var html_res = Resource.load("/me/blq/notes");
-            //  var html_stream = html_res.open_stream("/js/editor.html", ResourceLookupFlags.NONE); 
-            var html_stream = GLib.resources_open_stream("/me/blq/notes/js/editor.html", GLib.ResourceLookupFlags.NONE);
-            var html_bts = html_stream.read_bytes(int.MAX, null);
-            // var html = (string) html_bts.get_data();
-
-            webview.load_bytes(html_bts, null, null, null);
-
-
-            // note_text.load_uri("http://www.webkitgtk.org/");
-            //  var buf = edit.buffer;
-            //  buf.create_tag("b", 
-            //      "weight", Pango.Weight.BOLD);
-            //  buf.create_tag("i", 
-            //      "style", Pango.Style.ITALIC);
-            //  buf.create_tag("ul", 
-            //      "left-margin", 8);
-            //  buf.create_tag("li", 
-                //  "left-margin", 8);
-            
-            //  edit.buffer.text = "Some text ";
-            
-            //  Gtk.TextIter iter;
-            //  edit.buffer.get_end_iter(out iter);
-            //  edit.buffer.insert_markup(ref iter, "<i>Italic text. </i>", -1);
-            //  edit.buffer.insert_markup(ref iter, "<b>Bold text. </b>\n", -1);
-            //  edit.buffer.insert_with_tags_by_name(ref iter, "1. Unordered list.", -1, "ul", "li"); 
+            try {
+                var html_stream = GLib.resources_open_stream("/me/blq/notes/js/editor.html", GLib.ResourceLookupFlags.NONE);
+                var html_bts = html_stream.read_bytes(int.MAX, null);
+                webview.load_bytes(html_bts, null, null, null);
+            } catch (Error e) {
+                error("Failed to load html into webview: %s", e.message);
+            }
 
             contents_box.append(new Gtk.ScrolledWindow() {
                 child = webview,
@@ -244,6 +225,41 @@ namespace Notes.Widgets {
             editor_box.append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
 
             editor_box.append(new EditorToolbar());
+        }
+
+        private void load_stylesheet_from_resource(string resource_path) {
+            try {
+                var res_stream = GLib.resources_open_stream(resource_path, GLib.ResourceLookupFlags.NONE);
+                var res_bts = res_stream.read_bytes(int.MAX, null);
+
+                var stylesheet = new WebKit.UserStyleSheet(
+                    (string) res_bts.get_data(),
+                    WebKit.UserContentInjectedFrames.ALL_FRAMES,
+                    WebKit.UserStyleLevel.AUTHOR,
+                    null,
+                    null
+                );
+                webview_ucm.add_style_sheet(stylesheet);
+            } catch (Error e) {
+                error("Failed to read resource: %s", e.message);
+            }
+        }
+
+        private void load_script_from_resource(string resource_path) {
+            try {
+                var res_stream = GLib.resources_open_stream(resource_path, GLib.ResourceLookupFlags.NONE);
+                var res_bts = res_stream.read_bytes(int.MAX, null);
+                var res_script = new WebKit.UserScript(
+                    (string) res_bts.get_data(),
+                    WebKit.UserContentInjectedFrames.ALL_FRAMES,
+                    WebKit.UserScriptInjectionTime.END,
+                    null,
+                    null
+                );
+                webview_ucm.add_script(res_script);
+            } catch (Error e) {
+                error("Failed to read resource: %s", e.message);
+            }
         }
     }
 

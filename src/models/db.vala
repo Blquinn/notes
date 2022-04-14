@@ -73,6 +73,7 @@ namespace Notes.Models {
                     notebook_id text references notebooks,
                     title text not null,
                     note_contents text not null,
+                    note_preview text not null,
                     deleted_at bigint null,
                     is_pinned boolean not null default false
                 );
@@ -145,18 +146,9 @@ namespace Notes.Models {
         private unowned AppState state;
         private Db db;
 
-        //  private Gtk.TextTagTable tag_table;
-
         public NoteDao(AppState state, Db db) {
             this.state = state;
             this.db = db;
-
-            //  tag_table = new Gtk.TextTagTable();
-            //  var p_tag = new Gtk.TextTag("p");
-            //  //  p_tag.
-            //  //  p_tag.left_margin = 8;
-            //  p_tag.indent = 1;
-            //  tag_table.add(p_tag);
         }
 
         public GenericArray<Note> find_all(GenericArray<Notebook> notebooks) throws DbError {
@@ -165,43 +157,32 @@ namespace Notes.Models {
                 nb_map[nb.id] = nb;
 
             return db.select_rows<Note>("""
-            select n.id, n.title, n.note_contents, n.deleted_at, n.is_pinned, nb.id, n.last_updated
+            select n.id, n.title, n.note_contents, n.note_preview, n.deleted_at, n.is_pinned, nb.id, n.last_updated
             from notes n
             left outer join notebooks nb on n.notebook_id = nb.id
             order by n.is_pinned desc, n.last_updated desc
             """, (stmt) => {
                 Notebook? nb = null;
-                var nb_id = stmt.column_int(5);
+                var nb_id = stmt.column_int(6);
                 if (nb_id > 0) {
                     nb = nb_map.get(nb_id);
                 }
 
                 DateTime? deleted_at = null;
-                var da_unix = stmt.column_int64(3);
+                var da_unix = stmt.column_int64(4);
                 if (da_unix > 0) {
                     deleted_at = new DateTime.from_unix_local(da_unix);
                 }
-
-                //  var tag_table = new Gtk.TextTagTable();
-                //  var p_tag = new Gtk.TextTag("pgph");
-                //  p_tag.left_margin = 8;
-                //  tag_table.add(p_tag);
-                var tb = new Gtk.TextBuffer(null);
-                tb.create_tag("p", "indent", 1);
-
-                Gtk.TextIter iter;
-                tb.get_start_iter(out iter);
-                var note_contents = stmt.column_text(2);
-                tb.insert_markup(ref iter, note_contents, note_contents.length);
 
                 return new Note(
                     state,
                     stmt.column_text(1), 
                     nb, 
                     deleted_at,
-                    new DateTime.from_unix_local(stmt.column_int64(6)),
-                    (bool) stmt.column_int(4),
-                    tb
+                    new DateTime.from_unix_local(stmt.column_int64(7)),
+                    (bool) stmt.column_int(5),
+                    stmt.column_text(2),
+                    stmt.column_text(3)
                 ) { id = stmt.column_int(0) };
             });
         }
@@ -209,42 +190,37 @@ namespace Notes.Models {
         public void save(Note note) throws DbError {
             var notebook_id = note.notebook?.id;
 
-            Gtk.TextIter start_iter;
-            Gtk.TextIter end_iter;
-            note.body_buffer.get_start_iter(out start_iter);
-            note.body_buffer.get_end_iter(out end_iter);
-            var buffer_markup = note.body_buffer.get_text(start_iter, end_iter, true);
-
-            // TODO: Serialize text buffer with tags (some kind of markup).
             if (note.id > 0) {
                 db.execute(""" 
                     update notes 
-                    set notebook_id = ?, title = ?, note_contents = ?, deleted_at = ?, 
+                    set notebook_id = ?, title = ?, note_contents = ?, note_preview = ?, deleted_at = ?, 
                         is_pinned = ?, last_updated = ?
                     where id = ? 
                 """, (stmt) => {
                     bind_nullable_int(stmt, 1, notebook_id);
                     stmt.bind_text(2, note.title);
-                    stmt.bind_text(3, buffer_markup);
-                    bind_nullable_int64(stmt, 4, note.deleted_at?.to_unix());
-                    stmt.bind_int(5, (int)note.is_pinned);
-                    stmt.bind_int64(6, note.updated_at.to_unix());
-                    stmt.bind_int(7, note.id);
+                    stmt.bind_text(3, note.editor_state);
+                    stmt.bind_text(4, note.body_preview);
+                    bind_nullable_int64(stmt, 5, note.deleted_at?.to_unix());
+                    stmt.bind_int(6, (int)note.is_pinned);
+                    stmt.bind_int64(7, note.updated_at.to_unix());
+                    stmt.bind_int(8, note.id);
                 });
                 debug("Updated note %d, %d rows effected", note.id, db.changes());
                 return;
             }
 
             db.execute("""
-            insert into notes (notebook_id, title, note_contents, deleted_at, is_pinned, last_updated)
+            insert into notes (notebook_id, title, note_contents, note_preview, deleted_at, is_pinned, last_updated)
             values (?, ?, ?, ?, ?, ?)
             """, (stmt) => {
                 bind_nullable_int(stmt, 1, notebook_id);
                 stmt.bind_text(2, note.title);
-                stmt.bind_text(3, buffer_markup);
-                bind_nullable_int64(stmt, 4, note.deleted_at?.to_unix());
-                stmt.bind_int(5, (int)note.is_pinned);
-                stmt.bind_int64(6, note.updated_at.to_unix());
+                stmt.bind_text(3, note.editor_state);
+                stmt.bind_text(4, note.body_preview);
+                bind_nullable_int64(stmt, 5, note.deleted_at?.to_unix());
+                stmt.bind_int(6, (int)note.is_pinned);
+                stmt.bind_int64(7, note.updated_at.to_unix());
             });
 
             note.id = db.get_last_insert_rowid();
