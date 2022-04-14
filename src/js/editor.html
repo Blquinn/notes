@@ -30,6 +30,10 @@
 
 <script>
   /* Debounce */
+
+  function now() {
+    return Date.now();
+  }
   
   function debounce(func, wait, options) {
     var lastArgs,
@@ -168,7 +172,10 @@
   let updatingEditorState = false;
 
   function getEditorContents() {
-    const state = JSON.stringify(element.editor);
+    // TODO: Figure out a good way of storing selections.
+    let state = JSON.parse(JSON.stringify(element.editor));
+    state.selectedRange = [0, 0];
+    state = JSON.stringify(state);
     const text = element.editor.getDocument().toString().slice(0, 100).replaceAll('\n', '⏎');
     return {noteId: activeNoteId, state, text};
   }
