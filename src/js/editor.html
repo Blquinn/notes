@@ -165,7 +165,6 @@
   let activeNoteId = -1;
 
   const debounced_update = debounce(() => {
-    // console.log('JS Debounced editor update triggered.');
     window.webkit.messageHandlers.editorChanged.postMessage(getEditorContents());
   }, 300);
 

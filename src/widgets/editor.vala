@@ -105,6 +105,7 @@ namespace Notes.Widgets {
                 }, null);
 
             // Set editor state
+            // TODO: Bind the editor contents.
             webview.run_javascript.begin(@"loadEditor($(note.id), $(note.editor_state));");
         }
 

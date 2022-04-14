@@ -92,7 +92,7 @@ namespace Notes.Models {
             DateTime? deleted_at = null,
             DateTime updated_at = new DateTime.now_local(),
             bool is_pinned = false,
-            string editor_state = "{}",
+            string editor_state = """{"document":[{"text":[{"type":"string","attributes":{"blockBreak":true},"string":"\n"}],"attributes":[]}],"selectedRange":[0,0]}""",
             string body_preview = ""
         ) {
             Object(
