@@ -210,6 +210,7 @@ namespace Notes.Widgets {
             webview_ucm.script_message_received["editorChanged"].connect(on_editor_changed);
             webview_ucm.register_script_message_handler("editorChanged");
 
+
             try {
                 var html_stream = GLib.resources_open_stream("/me/blq/notes/js/editor.html", GLib.ResourceLookupFlags.NONE);
                 var html_bts = html_stream.read_bytes(int.MAX, null);
@@ -224,7 +225,11 @@ namespace Notes.Widgets {
 
             editor_box.append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
 
-            editor_box.append(new EditorToolbar());
+            var editor_toolbar = new EditorToolbar(this);
+            editor_box.append(editor_toolbar);
+            
+            webview_ucm.script_message_received["activeAttributesChanged"].connect(editor_toolbar.on_editor_active_attributes_changed);
+            webview_ucm.register_script_message_handler("activeAttributesChanged");
         }
 
         private void load_stylesheet_from_resource(string resource_path) {
@@ -261,21 +266,80 @@ namespace Notes.Widgets {
                 error("Failed to read resource: %s", e.message);
             }
         }
+
+        public void activate_attribute(string attribute) {
+            webview.run_javascript.begin(@"toggleAttribute('$(attribute)');");
+        }
+
+        public void on_change_nesting_level_clicked(bool increase) {
+            if (increase) {
+                debug("Increasing nesting level.");
+                webview.run_javascript.begin("element.editor.increaseNestingLevel();");
+            } else {
+                debug("Decreasing nesting level.");
+                webview.run_javascript.begin("element.editor.decreaseNestingLevel();");
+            }
+        }
+
+        public void give_webview_focus() {
+            webview.grab_focus();
+        }
     }
 
     public class EditorToolbar : Gtk.Box {
-        public EditorToolbar() {
+
+        private Gtk.ToggleButton bold_button;
+        private Gtk.ToggleButton italic_button;
+        private Gtk.ToggleButton underline_button;
+        private Gtk.ToggleButton strikethrough_button;
+
+        private Gtk.ToggleButton unordered_list_btn;
+        private Gtk.ToggleButton ordered_list_btn;
+
+        private HashTable<string, Gtk.ToggleButton> btn_map = new HashTable<string, Gtk.ToggleButton>(null, null);
+        private HashTable<Gtk.ToggleButton, string> btn_reverse_map = new HashTable<Gtk.ToggleButton, string>(null, null);
+
+        private unowned Editor editor;
+
+        public EditorToolbar(Editor editor) {
             Object(
                 orientation: Gtk.Orientation.HORIZONTAL, 
                 spacing: 0
             );
+            this.editor = editor;
             css_classes = {"background"};
         }
 
+        public void on_editor_active_attributes_changed(WebKit.JavascriptResult payload) {
+            var val = payload.get_js_value();
+            btn_map.foreach((key, btn) => {
+                var active = val.object_has_property(key);
+                if (btn.active != active)
+                    btn.active = active;
+            });
+        }
+
+        private void on_attribute_button_clicked(Gtk.Button btn) {
+            var tb = (Gtk.ToggleButton) btn;
+
+            var attr = btn_reverse_map.get(tb);
+            debug("Editor toggled %s", attr);
+            editor.activate_attribute(attr);
+            editor.give_webview_focus();
+        }
+
+        private void on_increase_nesting_level_clicked() {
+            editor.on_change_nesting_level_clicked(true);
+            editor.give_webview_focus();
+        }
+
+        private void on_decrease_nesting_level_clicked() {
+            editor.on_change_nesting_level_clicked(false);
+            editor.give_webview_focus();
+        }
+
         construct {
-
             // TODO: Why is there additional spacing after the left-most child?
-
             var inner_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8) {
                 halign = Gtk.Align.CENTER,
                 hexpand = true,
@@ -292,22 +356,29 @@ namespace Notes.Widgets {
             };
             inner_box.append(text_weight_box);
 
-            var bold_button = new Gtk.ToggleButton() {
+            bold_button = new Gtk.ToggleButton() {
                 icon_name = "format-text-bold-symbolic",
             };
+            bold_button.clicked.connect(on_attribute_button_clicked);
+
             text_weight_box.append(bold_button);
-            var italic_button = new Gtk.ToggleButton() {
+            italic_button = new Gtk.ToggleButton() {
                 icon_name = "format-text-italic-symbolic",
             };
             text_weight_box.append(italic_button);
-            var underline_button = new Gtk.ToggleButton() {
+            italic_button.clicked.connect(on_attribute_button_clicked);
+
+            underline_button = new Gtk.ToggleButton() {
                 icon_name = "format-text-underline-symbolic",
             };
             text_weight_box.append(underline_button);
-            var strikethrough_button = new Gtk.ToggleButton() {
+            underline_button.clicked.connect(on_attribute_button_clicked);
+
+            strikethrough_button = new Gtk.ToggleButton() {
                 icon_name = "format-text-strikethrough-symbolic"
             };
             text_weight_box.append(strikethrough_button);
+            strikethrough_button.clicked.connect(on_attribute_button_clicked);
 
             var text_alignment_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
                 css_classes = {"linked"}
@@ -321,15 +392,17 @@ namespace Notes.Widgets {
             };
             inner_box.append(lists_box);
 
-            var unordered_list_btn = new Gtk.ToggleButton() {
+            unordered_list_btn = new Gtk.ToggleButton() {
                 icon_name = "view-list-symbolic"
             };
             lists_box.append(unordered_list_btn);
+            unordered_list_btn.clicked.connect(on_attribute_button_clicked);
 
-            var ordered_list_btn = new Gtk.ToggleButton() {
+            ordered_list_btn = new Gtk.ToggleButton() {
                 icon_name = "view-list-symbolic"
             };
             lists_box.append(ordered_list_btn);
+            ordered_list_btn.clicked.connect(on_attribute_button_clicked);
 
             // Indent buttons
 
@@ -342,11 +415,22 @@ namespace Notes.Widgets {
                 icon_name = "format-indent-more-symbolic"
             };
             indent_levels_box.append(right_indent_btn);
+            right_indent_btn.clicked.connect(on_increase_nesting_level_clicked);
 
             var left_indent_btn = new Gtk.Button() {
                 icon_name = "format-indent-less-symbolic"
             };
             indent_levels_box.append(left_indent_btn);
+            left_indent_btn.clicked.connect(on_decrease_nesting_level_clicked);
+
+            btn_map.insert("bold", bold_button);
+            btn_map.insert("italic", italic_button);
+            btn_map.insert("underline", underline_button);
+            btn_map.insert("strike", strikethrough_button);
+            btn_map.insert("bullet", unordered_list_btn);
+            btn_map.insert("number", ordered_list_btn);
+
+            btn_map.foreach((key, btn) => btn_reverse_map.insert(btn, key));
         }
     }
 }

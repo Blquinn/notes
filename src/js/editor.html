@@ -159,9 +159,9 @@
   /* End Debounce */
 
   /* Editor stuff */
-
+  
   const element = document.querySelector("trix-editor");
-
+  
   let activeNoteId = -1;
 
   const debounced_update = debounce(() => {
@@ -170,6 +170,7 @@
   }, 300);
 
   let updatingEditorState = false;
+  let togglingAttribute = false;
 
   function getEditorContents() {
     // TODO: Figure out a good way of storing selections.
@@ -193,11 +194,45 @@
     }
   }
 
+  // Accepts inline attributes: bold, italic, href, and strike
+  // and block-level attributes: heading1, quote, code, bullet, and number
+  function toggleAttribute(attribute) {
+    try {
+      togglingAttribute = true;
+      const activeAttributes = element.editor.composition.getCurrentAttributes();
+      if (attribute in activeAttributes) {
+        element.editor.deactivateAttribute(attribute);
+      } else {
+        element.editor.activateAttribute(attribute);
+      }
+    } finally {
+      togglingAttribute = false;
+    }
+  }
+
+  addEventListener("trix-initialize", () => {
+    Trix.config.textAttributes.underline = {
+      style: { "textDecoration": "underline" },
+      inheritable: true,
+      parser: function(element) {
+        var style = window.getComputedStyle(element);
+        return style.textDecoration === "underline";
+      }
+    }
+  });
+
   addEventListener("trix-change", () => {
     // Don't send update message if editor state is being changed by note switch
     if (!updatingEditorState) {
       debounced_update();
     }
-  })
+  });
+
+  addEventListener("trix-attributes-change", () => {
+    if (togglingAttribute)
+      return;
+    const activeAttributes = element.editor.composition.getCurrentAttributes();
+    window.webkit.messageHandlers.activeAttributesChanged.postMessage(activeAttributes);
+  });
 </script>
 </html>
