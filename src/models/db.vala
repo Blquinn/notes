@@ -212,7 +212,7 @@ namespace Notes.Models {
 
             db.execute("""
             insert into notes (notebook_id, title, note_contents, note_preview, deleted_at, is_pinned, last_updated)
-            values (?, ?, ?, ?, ?, ?)
+            values (?, ?, ?, ?, ?, ?, ?)
             """, (stmt) => {
                 bind_nullable_int(stmt, 1, notebook_id);
                 stmt.bind_text(2, note.title);
