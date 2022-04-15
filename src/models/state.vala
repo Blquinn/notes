@@ -154,7 +154,7 @@ namespace Notes.Models {
             } catch (Error e) {
                 error("Failed to insert note: %s", e.message);
             }
-            
+
             notes.insert_sorted(note, notes_sort);
 
             var win_state = get_active_window_state();

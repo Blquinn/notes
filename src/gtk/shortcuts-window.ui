@@ -8,6 +8,90 @@
         <property name="max-height">12</property>
         <child>
           <object class="GtkShortcutsGroup">
+            <property name="title" translatable="yes">Editor</property>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;z</property>
+                <property name="title" translatable="yes">Undo</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;&lt;shift&gt;z</property>
+                <property name="title" translatable="yes">Redo</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;c</property>
+                <property name="title" translatable="yes">Copy</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;x</property>
+                <property name="title" translatable="yes">Cut</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;v</property>
+                <property name="title" translatable="yes">Paste</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;b</property>
+                <property name="title" translatable="yes">Bold</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;i</property>
+                <property name="title" translatable="yes">Italics</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;s</property>
+                <property name="title" translatable="yes">Strikethrough</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;u</property>
+                <property name="title" translatable="yes">Underline</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;l</property>
+                <property name="title" translatable="yes">Bullet List</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;o</property>
+                <property name="title" translatable="yes">Numbered List</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;]</property>
+                <property name="title" translatable="yes">Indent</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkShortcutsShortcut">
+                <property name="accelerator">&lt;ctrl&gt;[</property>
+                <property name="title" translatable="yes">Dedent</property>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <child>
+          <object class="GtkShortcutsGroup">
             <property name="title" translatable="yes">Miscellaneous</property>
             <child>
               <object class="GtkShortcutsShortcut">

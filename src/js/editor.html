@@ -169,14 +169,13 @@
   }, 300);
 
   let updatingEditorState = false;
-  let togglingAttribute = false;
 
   function getEditorContents() {
     // TODO: Figure out a good way of storing selections.
     let state = JSON.parse(JSON.stringify(element.editor));
     state.selectedRange = [0, 0];
     state = JSON.stringify(state);
-    const text = element.editor.getDocument().toString().trim().slice(0, 100).replaceAll('\n', '⏎');
+    const text = element.editor.getDocument().toString().trim().slice(0, 100).replaceAll('\n', ' ⏎ ');
     return {noteId: activeNoteId, state, text};
   }
 
@@ -196,20 +195,15 @@
   // Accepts inline attributes: bold, italic, href, and strike
   // and block-level attributes: heading1, quote, code, bullet, and number
   function toggleAttribute(attribute) {
-    try {
-      togglingAttribute = true;
-      const activeAttributes = element.editor.composition.getCurrentAttributes();
-      if (attribute in activeAttributes) {
-        element.editor.deactivateAttribute(attribute);
-      } else {
-        element.editor.activateAttribute(attribute);
-      }
-    } finally {
-      togglingAttribute = false;
+    const activeAttributes = element.editor.composition.getCurrentAttributes();
+    if (attribute in activeAttributes) {
+      element.editor.deactivateAttribute(attribute);
+    } else {
+      element.editor.activateAttribute(attribute);
     }
   }
 
-  addEventListener("trix-initialize", () => {
+  addEventListener("trix-initialize", event => {
     Trix.config.textAttributes.underline = {
       style: { "textDecoration": "underline" },
       inheritable: true,
@@ -228,10 +222,44 @@
   });
 
   addEventListener("trix-attributes-change", () => {
-    if (togglingAttribute)
-      return;
     const activeAttributes = element.editor.composition.getCurrentAttributes();
     window.webkit.messageHandlers.activeAttributesChanged.postMessage(activeAttributes);
   });
+
+  document.addEventListener("keypress", function onPress(event) {
+    const editor = element.editor;
+
+    if (event.key === "z" && event.ctrlKey) {
+      editor.undo();
+    } 
+
+    if (event.key === "Z" && event.ctrlKey && event.shiftKey) {
+      editor.redo();
+    }
+
+    if (event.key === "u" && event.ctrlKey) {
+      toggleAttribute("underline");
+    } 
+
+    if (event.key === "s" && event.ctrlKey) {
+      toggleAttribute("strike");
+    } 
+
+    if (event.key === "]" && event.ctrlKey) {
+      editor.increaseNestingLevel();
+    }
+
+    if (event.key === "[" && event.ctrlKey) {
+      editor.decreaseNestingLevel();
+    } 
+
+    if (event.key === "o" && event.ctrlKey) {
+      toggleAttribute("number");
+    } 
+
+    if (event.key === "l" && event.ctrlKey) {
+      toggleAttribute("bullet");
+    } 
+});
 </script>
 </html>
