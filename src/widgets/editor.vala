@@ -296,6 +296,8 @@ namespace Notes.Widgets {
 
         private Gtk.ToggleButton unordered_list_btn;
         private Gtk.ToggleButton ordered_list_btn;
+        private Gtk.ToggleButton code_btn;
+        private Gtk.ToggleButton quote_btn;
 
         private HashTable<string, Gtk.ToggleButton> btn_map = new HashTable<string, Gtk.ToggleButton>(null, null);
         private HashTable<Gtk.ToggleButton, string> btn_reverse_map = new HashTable<Gtk.ToggleButton, string>(null, null);
@@ -400,10 +402,23 @@ namespace Notes.Widgets {
             unordered_list_btn.clicked.connect(on_attribute_button_clicked);
 
             ordered_list_btn = new Gtk.ToggleButton() {
-                icon_name = "view-list-symbolic"
+                //  icon_name = "view-list-symbolic"
+                child = new Gtk.Image.from_resource("/me/blq/notes/icons/list-ol-solid.svg"),
             };
             lists_box.append(ordered_list_btn);
             ordered_list_btn.clicked.connect(on_attribute_button_clicked);
+
+            code_btn = new Gtk.ToggleButton() {
+                child = new Gtk.Image.from_resource("/me/blq/notes/icons/code-solid.svg"),
+            };
+            lists_box.append(code_btn);
+            code_btn.clicked.connect(on_attribute_button_clicked);
+
+            quote_btn = new Gtk.ToggleButton() {
+                icon_name = "user-available-symbolic"
+            };
+            lists_box.append(quote_btn);
+            quote_btn.clicked.connect(on_attribute_button_clicked);
 
             // Indent buttons
 
@@ -430,6 +445,8 @@ namespace Notes.Widgets {
             btn_map.insert("strike", strikethrough_button);
             btn_map.insert("bullet", unordered_list_btn);
             btn_map.insert("number", ordered_list_btn);
+            btn_map.insert("code", code_btn);
+            btn_map.insert("quote", quote_btn);
 
             btn_map.foreach((key, btn) => btn_reverse_map.insert(btn, key));
         }

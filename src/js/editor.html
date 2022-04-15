@@ -4,28 +4,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    html, body {
-      margin: 0 auto;
-      padding: 0;
-      height: 100vh;
-      width: 100vw;
-    }
-
-    trix-editor {
-      height: 100%;
-      width: 100%;
-      margin: 0 auto;
-      padding: 0;
-      border: none;
-    }
-  </style>
 </head>
 
 <body>
   <div id="blank-toolbar" hidden></div>
-  <trix-editor toolbar="blank-toolbar"></trix-editor>
+  <trix-editor toolbar="blank-toolbar" class="trix-content"></trix-editor>
 </body>
 
 <script>
@@ -259,6 +242,14 @@
 
     if (event.key === "l" && event.ctrlKey) {
       toggleAttribute("bullet");
+    } 
+
+    if (event.key === "t" && event.ctrlKey) {
+      toggleAttribute("code");
+    } 
+
+    if (event.key === "'" && event.ctrlKey) {
+      toggleAttribute("quote");
     } 
 });
 </script>
