@@ -30,6 +30,7 @@ namespace Notes.Models {
         public Notebook? notebook { 
             get { return _notebook; } 
             set {
+                debug("Updating notebook.");
                 _notebook = value;
                 if (state != null) state.note_moved();
                 if (update_debouncer != null) update_debouncer.call();
@@ -41,6 +42,7 @@ namespace Notes.Models {
         public DateTime? deleted_at { 
             get { return _deleted_at; }
             set {
+                debug("Updating deleted_at.");
                 _deleted_at = value;
                 if (state != null) state.note_moved();
                 if (update_debouncer != null) update_debouncer.call();
@@ -53,6 +55,7 @@ namespace Notes.Models {
         public bool is_pinned { 
             get { return _is_pinned; }
             set {
+                debug("Updating is_pinned.");
                 _is_pinned = value;
                 if (state != null) state.note_moved();
                 if (update_debouncer != null) update_debouncer.call();
@@ -63,23 +66,24 @@ namespace Notes.Models {
         public string title { 
             get { return _title; }
             set {
+                debug("Updating title.");
                 _title = value;
                 if (update_debouncer != null) update_debouncer.call();
             }
         }
 
-        public Gtk.TextBuffer body_buffer { get; set; default = new Gtk.TextBuffer(null); }
-
-        public string body_preview { get; private set; }
-
-        private string format_body_preview() {
-            Gtk.TextIter start;
-            Gtk.TextIter end;
-            body_buffer.get_start_iter(out start);
-            body_buffer.get_iter_at_offset(out end, 75);
-            var preview_text = body_buffer.get_text(start, end, false);
-            return preview_text.strip().replace("\n", "⏎");
+        private string _editor_state = "";
+        public string editor_state { 
+            get { return _editor_state; }
+            set {
+                debug("Updating editor_state.");
+                if (_editor_state == value)
+                    return;
+                _editor_state = value;
+                if (update_debouncer != null) update_debouncer.call();
+            }
         }
+        public string body_preview { get; set; }
 
         public Note(
             AppState? state, 
@@ -88,7 +92,8 @@ namespace Notes.Models {
             DateTime? deleted_at = null,
             DateTime updated_at = new DateTime.now_local(),
             bool is_pinned = false,
-            Gtk.TextBuffer body_buffer = new Gtk.TextBuffer(null)
+            string editor_state = """{"document":[{"text":[{"type":"string","attributes":{"blockBreak":true},"string":"\n"}],"attributes":[]}],"selectedRange":[0,0]}""",
+            string body_preview = ""
         ) {
             Object(
                 notebook: notebook,
@@ -96,15 +101,12 @@ namespace Notes.Models {
                 updated_at: updated_at,
                 is_pinned: is_pinned,
                 title: title,
-                body_buffer: body_buffer
+                editor_state: editor_state,
+                body_preview: body_preview
             );
             this.state = state;
             this.update_debouncer = new Util.Debouncer(300); 
             this.update_debouncer.callback.connect(on_debounced_update);
-            this.body_buffer.changed.connect(update_debouncer.call);
-            this.body_preview = format_body_preview();
-
-            //  debug("new note body %s PREVIEW %s", body_buffer.text, format_body_preview());
         }
 
         private void on_debounced_update() {
@@ -119,7 +121,6 @@ namespace Notes.Models {
                     warning("Failed to save note in db: %s", e.message);
                 }
 
-                this.body_preview = format_body_preview();
                 state.note_moved();
                 return Source.REMOVE;
             }, Priority.DEFAULT);

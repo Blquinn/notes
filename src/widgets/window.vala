@@ -76,7 +76,7 @@ namespace Notes.Widgets {
 
 			var new_win = new Window((Application) this.application, app_state);
 			new_win.state.active_notebook = state.active_notebook;
-			new_win.state.active_note = state.active_note;
+			new_win.state.update_active_note(state.active_note);
 			new_win.present();
 		}
 		
@@ -249,7 +249,7 @@ namespace Notes.Widgets {
 			this.title = _("Notes");
 			
 			var leaflet = new Adw.Leaflet();
-			leaflet.can_swipe_back = true;
+			// leaflet.can_swipe_back = true;
 			content = leaflet;
 			
 			// Sidebar

@@ -62,13 +62,19 @@ namespace Notes.Models {
         public unowned AppState app_state { get; construct; }
         public unowned Gtk.Window window { get; construct; }
 
-        //  public string active_notebook { get; set; default = NOTEBOOK_ALL_NOTES; }
-        // Notebook | string
         public ActiveNotebookVariant active_notebook { get; set; }
-        public Note? active_note { get; set; }
+        public Note? active_note { get; private set; }
 
         public WindowState(AppState app_state, Gtk.Window window) {
             Object(window: window, app_state: app_state, active_notebook: Models.ActiveNotebookVariant.all_notes());
+        }
+
+        public signal void active_note_change_request(SourceFunc callback);
+
+        // The editor will connect to this signal and call the callback when the contents
+        // of the editor are retrieved from the webview.
+        public void update_active_note(Note note) {
+            active_note = note;
         }
     }
 
@@ -118,6 +124,11 @@ namespace Notes.Models {
         }
 
         public void add_notebook(Notebook notebook) {
+            try {
+                notebook_dao.save(notebook);
+            } catch (Error e) {
+                error(e.message);
+            }
             notebooks.insert_sorted(notebook, (a, b) => {
                 return ((Notebook) a).name.collate(((Notebook)b).name);
             });
@@ -138,11 +149,17 @@ namespace Notes.Models {
         }
 
         public void add_note(Note note) {
+            try {
+                note_dao.save(note);
+            } catch (Error e) {
+                error("Failed to insert note: %s", e.message);
+            }
+
             notes.insert_sorted(note, notes_sort);
 
             var win_state = get_active_window_state();
             if (win_state != null)
-                win_state.active_note = note;
+                win_state.update_active_note(note);
         }
 
         public static int notes_sort(Object a, Object b) {
@@ -153,45 +170,5 @@ namespace Notes.Models {
                 comp = b_note.updated_at.compare(a_note.updated_at);
             return comp;
         }
-
-        /*
-        construct {
-            var nb = new Notebook(this, "Astronomy");
-            add_notebook(nb);
-            add_notebook(new Notebook(this, "Personal"));
-            add_notebook(new Notebook(this, "Work"));
-
-            notes.append(new Models.Note(this,
-                "Hello lk2lkj3kjl 32kjl32rjkl 32rjk l23jrlj kl kjjkl",
-                nb,
-                null,
-                new DateTime.now_local(),
-                false,
-                new Gtk.TextBuffer(null) {
-                    text = "ljkaklk3 jlkk3lj2kjl 23jk aslkkl k1",
-                }
-            ));
-            notes.append(new Models.Note(this,
-                "World",
-                null,
-                null,
-                new DateTime(new TimeZone.local(), 2017, 3, 10, 13, 45, 0),
-                false,
-                new Gtk.TextBuffer(null) {
-                    text = "lkj23kjl23 lkkj l234jkl2jkl3 kjl jkl12klj21kljlkj213lkj23kjl 23kl j123lkjljk12ljk ",
-                }
-            ));
-            notes.append(new Models.Note(this,
-                "Blah",
-                null,
-                null,
-                new DateTime(new TimeZone.local(), 2022, 3, 10, 13, 45, 0),
-                false,
-                new Gtk.TextBuffer(null) {
-                    text = "Blee bloop",
-                }
-            ));
-        }
-        */
     }
 }

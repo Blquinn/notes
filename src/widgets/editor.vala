@@ -28,7 +28,9 @@ namespace Notes.Widgets {
         private Gtk.Entry title_entry;
         private Gtk.Label notebook_name_lbl;
         private Gtk.Label last_updated_lbl;
-        private Gtk.TextView note_text;
+        // private Gtk.TextView note_text;
+        private WebKit.WebView webview;
+        private WebKit.UserContentManager webview_ucm;
 
         private Binding? title_binding;
         private Binding? last_updated_binding;
@@ -102,7 +104,34 @@ namespace Notes.Widgets {
                     return true; 
                 }, null);
 
-            note_text.buffer = note.body_buffer;
+            // Set editor state
+            // TODO: Bind the editor contents.
+            webview.run_javascript.begin(@"loadEditor($(note.id), $(note.editor_state));");
+        }
+
+        private void on_editor_changed(WebKit.JavascriptResult payload) {
+            var val = payload.get_js_value();
+            var note_id = (int) val.object_get_property("noteId").to_int32();
+            var editor_json = val.object_get_property("state").to_string();
+            var editor_text = val.object_get_property("text").to_string();
+            debug("Editor changed. %d, %s, %s", note_id, editor_json, editor_text);
+
+            var note = win_state.active_note;
+            if (note.id == note_id) {
+                note.editor_state = editor_json;
+                note.body_preview = editor_text;
+            } else {
+                for (int i = 0; i < app_state.notes.get_n_items(); i++) {
+                    var n = (Models.Note) app_state.notes.get_item(i);
+                    if (n.id == note_id) {
+                        note.editor_state = editor_json;
+                        note.body_preview = editor_text;
+                        return;
+                    }
+                }
+
+                warning("Note with note_id %d not found.", note_id);
+            }
         }
         
         private void build_ui() {
@@ -142,7 +171,9 @@ namespace Notes.Widgets {
             
             var note_details_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             // TODO: Source this from somewhere.
-            last_updated_lbl = new Gtk.Label(null);
+            last_updated_lbl = new Gtk.Label(null) {
+                css_classes = {"dim-label"},
+            };
             note_details_box.append(last_updated_lbl);
             
             var change_nb_btn = new Gtk.Button();
@@ -152,40 +183,255 @@ namespace Notes.Widgets {
             var change_nb_btn_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8);
             var nb_icon = new Gtk.Image() {
                 icon_name = "accessories-text-editor-symbolic",
+                css_classes = {"dim-label"},
             };
             change_nb_btn_box.append(nb_icon);
-            notebook_name_lbl = new Gtk.Label(null);
+            notebook_name_lbl = new Gtk.Label(null) {
+                css_classes = {"dim-label"},
+            };
             change_nb_btn_box.append(notebook_name_lbl);
             change_nb_btn.child = change_nb_btn_box;
             note_details_box.append(change_nb_btn);
             
             contents_box.append(note_details_box);
             
-            note_text = new Gtk.TextView() {
-                wrap_mode = Gtk.WrapMode.WORD_CHAR,
-                vexpand = true,
+            webview_ucm = new WebKit.UserContentManager();
+            var webview_settings = new WebKit.Settings() {
+                enable_write_console_messages_to_stdout = true
             };
-            //  var buf = edit.buffer;
-            //  buf.create_tag("b", 
-            //      "weight", Pango.Weight.BOLD);
-            //  buf.create_tag("i", 
-            //      "style", Pango.Style.ITALIC);
-            //  buf.create_tag("ul", 
-            //      "left-margin", 8);
-            //  buf.create_tag("li", 
-            //      "left-margin", 8);
-            
-            //  edit.buffer.text = "Some text ";
-            
-            //  Gtk.TextIter iter;
-            //  edit.buffer.get_end_iter(out iter);
-            //  edit.buffer.insert_markup(ref iter, "<i>Italic text. </i>", -1);
-            //  edit.buffer.insert_markup(ref iter, "<b>Bold text. </b>\n", -1);
-            //  edit.buffer.insert_with_tags_by_name(ref iter, "1. Unordered list.", -1, "ul", "li"); 
-            
+            webview = new WebKit.WebView.with_user_content_manager(webview_ucm) {
+                vexpand = true,
+                settings = webview_settings,
+            };
+
+            load_script_from_resource("/me/blq/notes/js/trix.js");
+            load_stylesheet_from_resource("/me/blq/notes/js/trix.css");
+
+            // Register script messages.
+            webview_ucm.script_message_received["editorChanged"].connect(on_editor_changed);
+            webview_ucm.register_script_message_handler("editorChanged");
+
+
+            try {
+                var html_stream = GLib.resources_open_stream("/me/blq/notes/js/editor.html", GLib.ResourceLookupFlags.NONE);
+                var html_bts = html_stream.read_bytes(int.MAX, null);
+                webview.load_bytes(html_bts, null, null, null);
+            } catch (Error e) {
+                error("Failed to load html into webview: %s", e.message);
+            }
+
             contents_box.append(new Gtk.ScrolledWindow() {
-                child = note_text,
+                child = webview,
             });
+
+            editor_box.append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
+
+            var editor_toolbar = new EditorToolbar(this);
+            editor_box.append(editor_toolbar);
+            
+            webview_ucm.script_message_received["activeAttributesChanged"].connect(editor_toolbar.on_editor_active_attributes_changed);
+            webview_ucm.register_script_message_handler("activeAttributesChanged");
+        }
+
+        private void load_stylesheet_from_resource(string resource_path) {
+            try {
+                var res_stream = GLib.resources_open_stream(resource_path, GLib.ResourceLookupFlags.NONE);
+                var res_bts = res_stream.read_bytes(int.MAX, null);
+
+                var stylesheet = new WebKit.UserStyleSheet(
+                    (string) res_bts.get_data(),
+                    WebKit.UserContentInjectedFrames.ALL_FRAMES,
+                    WebKit.UserStyleLevel.AUTHOR,
+                    null,
+                    null
+                );
+                webview_ucm.add_style_sheet(stylesheet);
+            } catch (Error e) {
+                error("Failed to read resource: %s", e.message);
+            }
+        }
+
+        private void load_script_from_resource(string resource_path) {
+            try {
+                var res_stream = GLib.resources_open_stream(resource_path, GLib.ResourceLookupFlags.NONE);
+                var res_bts = res_stream.read_bytes(int.MAX, null);
+                var res_script = new WebKit.UserScript(
+                    (string) res_bts.get_data(),
+                    WebKit.UserContentInjectedFrames.ALL_FRAMES,
+                    WebKit.UserScriptInjectionTime.END,
+                    null,
+                    null
+                );
+                webview_ucm.add_script(res_script);
+            } catch (Error e) {
+                error("Failed to read resource: %s", e.message);
+            }
+        }
+
+        public void activate_attribute(string attribute) {
+            webview.run_javascript.begin(@"toggleAttribute('$(attribute)');");
+        }
+
+        public void on_change_nesting_level_clicked(bool increase) {
+            if (increase) {
+                debug("Increasing nesting level.");
+                webview.run_javascript.begin("element.editor.increaseNestingLevel();");
+            } else {
+                debug("Decreasing nesting level.");
+                webview.run_javascript.begin("element.editor.decreaseNestingLevel();");
+            }
+        }
+
+        public void give_webview_focus() {
+            webview.grab_focus();
+        }
+    }
+
+    public class EditorToolbar : Gtk.Box {
+
+        private Gtk.ToggleButton bold_button;
+        private Gtk.ToggleButton italic_button;
+        private Gtk.ToggleButton underline_button;
+        private Gtk.ToggleButton strikethrough_button;
+
+        private Gtk.ToggleButton unordered_list_btn;
+        private Gtk.ToggleButton ordered_list_btn;
+
+        private HashTable<string, Gtk.ToggleButton> btn_map = new HashTable<string, Gtk.ToggleButton>(null, null);
+        private HashTable<Gtk.ToggleButton, string> btn_reverse_map = new HashTable<Gtk.ToggleButton, string>(null, null);
+
+        private unowned Editor editor;
+
+        public EditorToolbar(Editor editor) {
+            Object(
+                orientation: Gtk.Orientation.HORIZONTAL, 
+                spacing: 0
+            );
+            this.editor = editor;
+            css_classes = {"background"};
+        }
+
+        public void on_editor_active_attributes_changed(WebKit.JavascriptResult payload) {
+            var val = payload.get_js_value();
+            btn_map.foreach((key, btn) => {
+                var active = val.object_has_property(key);
+                if (btn.active != active)
+                    btn.active = active;
+            });
+        }
+
+        private void on_attribute_button_clicked(Gtk.Button btn) {
+            var tb = (Gtk.ToggleButton) btn;
+
+            var attr = btn_reverse_map.get(tb);
+            debug("Editor toggled %s", attr);
+            editor.activate_attribute(attr);
+            editor.give_webview_focus();
+        }
+
+        private void on_increase_nesting_level_clicked() {
+            editor.on_change_nesting_level_clicked(true);
+            editor.give_webview_focus();
+        }
+
+        private void on_decrease_nesting_level_clicked() {
+            editor.on_change_nesting_level_clicked(false);
+            editor.give_webview_focus();
+        }
+
+        construct {
+            // TODO: Why is there additional spacing after the left-most child?
+            var inner_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8) {
+                halign = Gtk.Align.CENTER,
+                hexpand = true,
+                valign = Gtk.Align.CENTER,
+                margin_top = 4,
+                margin_bottom = 4,
+            };
+            append(inner_box);
+
+            // Text weight
+
+            var text_weight_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                css_classes = {"linked"}
+            };
+            inner_box.append(text_weight_box);
+
+            bold_button = new Gtk.ToggleButton() {
+                icon_name = "format-text-bold-symbolic",
+            };
+            bold_button.clicked.connect(on_attribute_button_clicked);
+
+            text_weight_box.append(bold_button);
+            italic_button = new Gtk.ToggleButton() {
+                icon_name = "format-text-italic-symbolic",
+            };
+            text_weight_box.append(italic_button);
+            italic_button.clicked.connect(on_attribute_button_clicked);
+
+            underline_button = new Gtk.ToggleButton() {
+                icon_name = "format-text-underline-symbolic",
+            };
+            text_weight_box.append(underline_button);
+            underline_button.clicked.connect(on_attribute_button_clicked);
+
+            strikethrough_button = new Gtk.ToggleButton() {
+                icon_name = "format-text-strikethrough-symbolic"
+            };
+            text_weight_box.append(strikethrough_button);
+            strikethrough_button.clicked.connect(on_attribute_button_clicked);
+
+            var text_alignment_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                css_classes = {"linked"}
+            };
+            inner_box.append(text_alignment_box);
+
+            // Lists buttons
+
+            var lists_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                css_classes = {"linked"}
+            };
+            inner_box.append(lists_box);
+
+            unordered_list_btn = new Gtk.ToggleButton() {
+                icon_name = "view-list-symbolic"
+            };
+            lists_box.append(unordered_list_btn);
+            unordered_list_btn.clicked.connect(on_attribute_button_clicked);
+
+            ordered_list_btn = new Gtk.ToggleButton() {
+                icon_name = "view-list-symbolic"
+            };
+            lists_box.append(ordered_list_btn);
+            ordered_list_btn.clicked.connect(on_attribute_button_clicked);
+
+            // Indent buttons
+
+            var indent_levels_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0) {
+                css_classes = {"linked"}
+            };
+            inner_box.append(indent_levels_box);
+
+            var right_indent_btn = new Gtk.Button() {
+                icon_name = "format-indent-more-symbolic"
+            };
+            indent_levels_box.append(right_indent_btn);
+            right_indent_btn.clicked.connect(on_increase_nesting_level_clicked);
+
+            var left_indent_btn = new Gtk.Button() {
+                icon_name = "format-indent-less-symbolic"
+            };
+            indent_levels_box.append(left_indent_btn);
+            left_indent_btn.clicked.connect(on_decrease_nesting_level_clicked);
+
+            btn_map.insert("bold", bold_button);
+            btn_map.insert("italic", italic_button);
+            btn_map.insert("underline", underline_button);
+            btn_map.insert("strike", strikethrough_button);
+            btn_map.insert("bullet", unordered_list_btn);
+            btn_map.insert("number", ordered_list_btn);
+
+            btn_map.foreach((key, btn) => btn_reverse_map.insert(btn, key));
         }
     }
 }
