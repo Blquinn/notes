@@ -197,7 +197,10 @@ namespace Notes.Widgets {
             
             webview_ucm = new WebKit.UserContentManager();
             var webview_settings = new WebKit.Settings() {
-                enable_write_console_messages_to_stdout = true
+                enable_write_console_messages_to_stdout = true,
+                allow_top_navigation_to_data_urls = false,
+                allow_universal_access_from_file_urls = false,
+                enable_back_forward_navigation_gestures = false,
             };
             webview = new WebKit.WebView.with_user_content_manager(webview_ucm) {
                 vexpand = true,
@@ -211,6 +214,18 @@ namespace Notes.Widgets {
             webview_ucm.script_message_received["editorChanged"].connect(on_editor_changed);
             webview_ucm.register_script_message_handler("editorChanged");
 
+            webview.decide_policy.connect((decision, type) => {
+                if (type == WebKit.PolicyDecisionType.NAVIGATION_ACTION) {
+                    var nav_decision = (WebKit.NavigationPolicyDecision) decision;
+                    // Prevent user from navigating to links on page inside webview.
+                    if (nav_decision.navigation_action.get_request().uri == "about:blank")
+                        decision.use();
+                    else
+                        decision.ignore();
+                }
+
+                return false;
+            });
 
             try {
                 var html_stream = GLib.resources_open_stream("/me/blq/notes/js/editor.html", GLib.ResourceLookupFlags.NONE);
