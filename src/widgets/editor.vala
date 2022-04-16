@@ -201,6 +201,8 @@ namespace Notes.Widgets {
                 allow_top_navigation_to_data_urls = false,
                 allow_universal_access_from_file_urls = false,
                 enable_back_forward_navigation_gestures = false,
+                // TODO: Disable this in production builds.
+                enable_developer_extras = true,
             };
             webview = new WebKit.WebView.with_user_content_manager(webview_ucm) {
                 vexpand = true,
@@ -331,9 +333,14 @@ namespace Notes.Widgets {
         public void on_editor_active_attributes_changed(WebKit.JavascriptResult payload) {
             var val = payload.get_js_value();
             btn_map.foreach((key, btn) => {
-                var active = val.object_has_property(key);
-                if (btn.active != active)
-                    btn.active = active;
+                var has_prop = val.object_has_property(key);
+                if (has_prop) {
+                    var active = val.object_get_property(key).to_boolean();
+                    if (btn.active != active) 
+                        btn.active = active;
+                } else if (btn.active != false) { // Property not there, so turn it off.
+                    btn.active = false;
+                }
             });
         }
 
