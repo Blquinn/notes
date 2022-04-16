@@ -12,5 +12,6 @@
 
     <file>icons/code-solid.svg</file>
     <file>icons/list-ol-solid.svg</file>
+    <file>icons/user-invisible-symbolic.svg</file>
   </gresource>
 </gresources>

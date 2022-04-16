@@ -415,7 +415,8 @@ namespace Notes.Widgets {
             code_btn.clicked.connect(on_attribute_button_clicked);
 
             quote_btn = new Gtk.ToggleButton() {
-                icon_name = "user-available-symbolic"
+                //  icon_name = "user-invisible-symbolic"
+                child = new Gtk.Image.from_resource("/me/blq/notes/icons/user-invisible-symbolic.svg"),
             };
             lists_box.append(quote_btn);
             quote_btn.clicked.connect(on_attribute_button_clicked);
