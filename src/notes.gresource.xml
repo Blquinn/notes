@@ -4,7 +4,7 @@
     <file>gtk/help-overlay.ui</file>
     <file>gtk/shortcuts-window.ui</file>
 
-    <file>css/style.css</file>
+    <file alias="style.css">css/style.css</file>
     
     <file>js/trix.js</file>
     <file>js/trix.css</file>

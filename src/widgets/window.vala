@@ -43,8 +43,6 @@ namespace Notes.Widgets {
 			this.app_state = app_state;
 			this.state = new Models.WindowState(app_state, this);
 
-			add_css_provider();
-
 			this.add_action_entries(this.WIN_ACTIONS, this);
 			
 			// Couldn't get this to work with action entries :/
@@ -57,12 +55,6 @@ namespace Notes.Widgets {
 			this.add_action(change_notebook_action);
 			
 			build_ui();
-		}
-
-		private void add_css_provider() {
-			var provider = new Gtk.CssProvider();
-			provider.load_from_resource("/me/blq/notes/css/style.css");
-			Gtk.StyleContext.add_provider_for_display(get_display(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 		}
 
 		private void on_add_note_btn_clicked() {
