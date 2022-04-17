@@ -31,10 +31,16 @@ handle building and running the project.
 
 ## Flatpak
 
-1. Build gnome nightly sdk `flatpak install org.gnome.Sdk//master`
-1. Build flatpak `flatpak-builder build-flatpak me.blq.notes.json`
-1. Install built flatpak `flatpak-builder --user --install --force-clean build-flatpak me.blq.notes.json`
-1. Run the flatpak `flatpak run me.blq.notes`
+1. Add flatpak repo: 
+`flatpak remote-add --if-not-exists gnome-nightly https://nightly.gnome.org/gnome-nightly.flatpakrepo`
+2. Build gnome nightly sdk:
+`flatpak install org.gnome.Sdk//master`
+3. Build flatpak: 
+`flatpak-builder build-flatpak me.blq.notes.json`
+4. Install built flatpak: 
+`flatpak-builder --user --install --force-clean build-flatpak me.blq.notes.json`
+5. Run the flatpak: 
+`flatpak run me.blq.notes`
 
 ## Meson
 
