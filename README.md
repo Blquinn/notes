@@ -15,6 +15,29 @@ Please only use it if you're curious to play around with it.
 Please do play around with it and file issues for any bugs found,
 any help is appreciated :)
 
+## Features
+
+*Application*
+
+- [x] Notebook based categorization
+- [x] Trash can
+- [x] Local persistence
+- [x] Auto-save
+- [ ] Cloud sync
+- [ ] Sync with 3rd party applications
+- [ ] Dark theme support
+- [ ] Full text search (serching note contents)
+
+*Editor*
+
+- [x] Bold, Italics, Strikethrough, Underline text
+- [x] Ordered Lists & Bulleted Lists
+- [x] Code Blocks
+- [x] Block Quotes
+- [x] Arbitrary nesting of block formatting
+- [x] Pasting images support
+- [ ] Drawing support
+
 ## Issues
 
 The webview used for the editor is pre-release and it seems to freeze up
