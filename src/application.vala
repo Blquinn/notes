@@ -28,10 +28,15 @@ namespace Notes {
 		};
 
 		public Application () {
-			Object (application_id: "me.blq.notes", flags: ApplicationFlags.FLAGS_NONE);
+			Object(application_id: "me.blq.notes", flags: ApplicationFlags.FLAGS_NONE);
+		}
+
+		public override void startup() {
+			base.startup();
 
 			this.state = new Models.AppState(this);
 
+			this.set_resource_base_path("/me/blq/notes");
 			this.add_action_entries(this.APP_ACTIONS, this);
 			this.set_accels_for_action("app.quit", {"<primary>q"});
 			this.set_color_scheme();
@@ -39,6 +44,7 @@ namespace Notes {
 
 		public override void activate () {
 			base.activate();
+
 			var win = this.active_window;
 			if (win == null) {
 				win = new Widgets.Window(this, state);
