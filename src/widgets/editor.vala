@@ -114,7 +114,7 @@ namespace Notes.Widgets {
             var note_id = (int) val.object_get_property("noteId").to_int32();
             var editor_json = val.object_get_property("state").to_string();
             var editor_text = val.object_get_property("text").to_string();
-            debug("Editor changed. %d, %s, %s", note_id, editor_json, editor_text);
+            //  debug("Editor changed. %d, %s, %s", note_id, editor_json, editor_text);
 
             var note = win_state.active_note;
             if (note.id == note_id) {
