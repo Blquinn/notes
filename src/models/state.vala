@@ -78,6 +78,11 @@ namespace Notes.Models {
         }
     }
 
+    public enum ColorScheme {
+        LIGHT,
+        DARK
+    }
+
     public class AppState : Object {
         private unowned Application application;
         public NoteDao note_dao { get; set; }
@@ -91,9 +96,13 @@ namespace Notes.Models {
         public ListStore notes { get; default = new ListStore(typeof(Note)); }
         public ListStore notebooks { get; default = new ListStore(typeof(Notebook)); }
 
+        public ColorScheme color_scheme { get; set; default = ColorScheme.LIGHT; }
+
         public AppState(Application app) {
             this.application = app;
             this.notebooks.items_changed.connect(() => notebook_changed());
+
+            bind_color_scheme();
 
 			try {
 				var db = new Db();
@@ -170,5 +179,27 @@ namespace Notes.Models {
                 comp = b_note.updated_at.compare(a_note.updated_at);
             return comp;
         }
+
+		private void bind_color_scheme() {
+			var gnome_settings = new Settings("org.gnome.desktop.interface");
+			var gtk_theme = gnome_settings.get_string("gtk-theme");
+			color_scheme = map_color_scheme(gtk_theme);
+			gnome_settings.bind_with_mapping("gtk-theme", this, "color-scheme", SettingsBindFlags.DEFAULT, 
+				(value, variant, _) => {
+					var scheme = map_color_scheme(variant.get_string());
+					value.set_enum(scheme);
+					return true;
+				}, 
+				(a, b, c) => { return true; }, 
+				null, null);
+		}
+
+		private static ColorScheme map_color_scheme(string theme_name) {
+			var gtk_settings = Gtk.Settings.get_default();
+			var is_dark = (gtk_settings != null && gtk_settings.gtk_application_prefer_dark_theme == true)
+				? true
+				: theme_name.down().contains("dark");
+			return is_dark ? ColorScheme.DARK : ColorScheme.LIGHT;
+		}
     }
 }

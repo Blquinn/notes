@@ -6,11 +6,25 @@ http://trix-editor.org/*/
 
 /* Css has been updated from original trix css. */
 
+:root {
+  --text-color: inherit;
+  --background-color: inherit;
+  --code-block-background-color: inherit;
+  --code-block-text-color: inherit;
+}
+
 html, body {
   margin: 0 auto;
   padding: 0;
   height: 100vh;
   width: 100vw;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.trix-content {
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 trix-editor {
@@ -69,7 +83,8 @@ trix-editor .attachment__caption-editor {
   font-size: inherit;
   font-family: inherit;
   line-height: inherit;
-  color: inherit;
+  color: var(--text-color);
+  background-color: var(--code-block-background-color);
   text-align: center;
   vertical-align: top;
   border: none;
@@ -192,7 +207,8 @@ trix-editor .attachment__metadata {
     font-size: 0.9em;
     padding: 0.5em;
     white-space: pre;
-    background-color: #eee;
+    color: var(--code-block-text-color);
+    background-color: var(--code-block-background-color);
     overflow-x: auto; }
   .trix-content img {
     max-width: 100%;

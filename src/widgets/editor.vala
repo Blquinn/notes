@@ -114,7 +114,6 @@ namespace Notes.Widgets {
             var note_id = (int) val.object_get_property("noteId").to_int32();
             var editor_json = val.object_get_property("state").to_string();
             var editor_text = val.object_get_property("text").to_string();
-            //  debug("Editor changed. %d, %s, %s", note_id, editor_json, editor_text);
 
             var note = win_state.active_note;
             if (note.id == note_id) {
@@ -133,6 +132,27 @@ namespace Notes.Widgets {
                 warning("Note with note_id %d not found.", note_id);
             }
         }
+
+        private void recolor_webview() {
+            string js;
+            if (app_state.color_scheme == Models.ColorScheme.DARK) {
+                js = """
+                document.documentElement.style.setProperty('--text-color', '#ffffff');
+                document.documentElement.style.setProperty('--background-color', '#1e1e1e');
+                document.documentElement.style.setProperty('--code-block-background-color', '#393939');
+                document.documentElement.style.setProperty('--code-block-text-color', '#ffffff');
+                """;
+            } else {
+                js = """
+                document.documentElement.style.setProperty('--text-color', 'inherit');
+                document.documentElement.style.setProperty('--background-color', 'inherit');
+                document.documentElement.style.setProperty('--code-block-background-color', '#eee');
+                document.documentElement.style.setProperty('--code-block-text-color', 'inherit');
+                """;
+            }
+
+            webview.run_javascript.begin(js, null);
+        }
         
         private void build_ui() {
             add_css_class("view");
@@ -148,8 +168,6 @@ namespace Notes.Widgets {
             stack.add_child(placeholder);
 
             stack.set_visible_child(placeholder);
-
-            win_state.notify["active-note"].connect(on_active_note_changed);
             
             title_entry = new Gtk.Entry() {
                 css_classes = {"flat", "title-1"},
@@ -248,6 +266,14 @@ namespace Notes.Widgets {
             
             webview_ucm.script_message_received["activeAttributesChanged"].connect(editor_toolbar.on_editor_active_attributes_changed);
             webview_ucm.register_script_message_handler("activeAttributesChanged");
+
+            win_state.notify["active-note"].connect(on_active_note_changed);
+            app_state.notify["color-scheme"].connect(recolor_webview);
+
+            webview.load_changed.connect((e) => {
+                if (e == WebKit.LoadEvent.FINISHED)
+                    recolor_webview();
+            });
         }
 
         private void load_stylesheet_from_resource(string resource_path) {

@@ -39,7 +39,13 @@ namespace Notes {
 			this.set_resource_base_path("/me/blq/notes");
 			this.add_action_entries(this.APP_ACTIONS, this);
 			this.set_accels_for_action("app.quit", {"<primary>q"});
-			this.set_color_scheme();
+
+			state.bind_property("color-scheme", style_manager, "color-scheme", BindingFlags.SYNC_CREATE, 
+				(_, f, ref t) => {
+					var adw_scheme = f.get_enum() == Models.ColorScheme.DARK ? Adw.ColorScheme.PREFER_DARK : Adw.ColorScheme.PREFER_LIGHT;
+					t.set_enum(adw_scheme);
+					return true;
+				}, null);
 		}
 
 		public override void activate () {
@@ -62,28 +68,6 @@ namespace Notes {
 
 		private void on_preferences_action () {
 			message("app.preferences action activated");
-		}
-
-		private void set_color_scheme() {
-			var gnome_settings = new Settings("org.gnome.desktop.interface");
-			var gtk_theme = gnome_settings.get_string("gtk-theme");
-			style_manager.set_color_scheme(get_adw_scheme(gtk_theme));
-			gnome_settings.bind_with_mapping("gtk-theme", style_manager, "color-scheme", SettingsBindFlags.DEFAULT, 
-				(value, variant, _) => {
-					var scheme = get_adw_scheme(variant.get_string());
-					value.set_enum(scheme);
-					return true;
-				}, 
-				(a, b, c) => { return true; }, 
-				null, null);
-		}
-
-		private static Adw.ColorScheme get_adw_scheme(string theme_name) {
-			var gtk_settings = Gtk.Settings.get_default();
-			var is_dark = (gtk_settings != null && gtk_settings.gtk_application_prefer_dark_theme == true)
-				? true
-				: theme_name.down().contains("dark");
-			return is_dark ? Adw.ColorScheme.PREFER_DARK : Adw.ColorScheme.DEFAULT;
 		}
 	}
 }
