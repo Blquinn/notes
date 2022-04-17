@@ -176,6 +176,10 @@ trix-editor .attachment__metadata {
     border-right-width: 0.3em;
     margin-right: 0.3em;
     padding-right: 0.6em; }
+  .trix-content ol {
+    margin-left: 1em; }
+  .trix-content ul {
+    margin-left: 1em; }
   .trix-content li {
     margin-left: 1em; }
   .trix-content [dir=rtl] li {
