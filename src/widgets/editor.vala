@@ -261,7 +261,7 @@ namespace Notes.Widgets {
 
             editor_box.append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
 
-            var editor_toolbar = new EditorToolbar(this);
+            var editor_toolbar = new EditorToolbar(app_state, this);
             editor_box.append(editor_toolbar);
             
             webview_ucm.script_message_received["activeAttributesChanged"].connect(editor_toolbar.on_editor_active_attributes_changed);
@@ -345,15 +345,18 @@ namespace Notes.Widgets {
         private HashTable<string, Gtk.ToggleButton> btn_map = new HashTable<string, Gtk.ToggleButton>(null, null);
         private HashTable<Gtk.ToggleButton, string> btn_reverse_map = new HashTable<Gtk.ToggleButton, string>(null, null);
 
+        private unowned Models.AppState app_state;
         private unowned Editor editor;
 
-        public EditorToolbar(Editor editor) {
+        public EditorToolbar(Models.AppState app_state, Editor editor) {
             Object(
                 orientation: Gtk.Orientation.HORIZONTAL, 
                 spacing: 0
             );
+            this.app_state = app_state;
             this.editor = editor;
             css_classes = {"background"};
+            build_ui();
         }
 
         public void on_editor_active_attributes_changed(WebKit.JavascriptResult payload) {
@@ -389,7 +392,19 @@ namespace Notes.Widgets {
             editor.give_webview_focus();
         }
 
-        construct {
+        // TODO: Figure out how to recolor svgs in a smarter way.
+        private void bind_btn_icon(Gtk.Button btn, string icon_name) {
+            app_state.bind_property("color-scheme", btn, "icon-name", BindingFlags.SYNC_CREATE, 
+                (_, f, ref t) => {
+                    var icon = f.get_enum() == Models.ColorScheme.DARK
+                        ? icon_name + "-dark-symbolic"
+                        : icon_name + "-symbolic";
+                    t.set_string(icon);
+                    return true;
+                }, null);
+        }
+
+        private void build_ui() {
             // TODO: Why is there additional spacing after the left-most child?
             var inner_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8) {
                 halign = Gtk.Align.CENTER,
@@ -449,23 +464,18 @@ namespace Notes.Widgets {
             lists_box.append(unordered_list_btn);
             unordered_list_btn.clicked.connect(on_attribute_button_clicked);
 
-            ordered_list_btn = new Gtk.ToggleButton() {
-                //  icon_name = "view-list-symbolic"
-                child = new Gtk.Image.from_resource("/me/blq/notes/icons/list-ol-solid.svg"),
-            };
+            ordered_list_btn = new Gtk.ToggleButton();
+            bind_btn_icon(ordered_list_btn, "list-ol");
             lists_box.append(ordered_list_btn);
             ordered_list_btn.clicked.connect(on_attribute_button_clicked);
 
-            code_btn = new Gtk.ToggleButton() {
-                child = new Gtk.Image.from_resource("/me/blq/notes/icons/code-solid.svg"),
-            };
+            code_btn = new Gtk.ToggleButton();
+            bind_btn_icon(code_btn, "code");
             lists_box.append(code_btn);
             code_btn.clicked.connect(on_attribute_button_clicked);
 
-            quote_btn = new Gtk.ToggleButton() {
-                //  icon_name = "user-invisible-symbolic"
-                child = new Gtk.Image.from_resource("/me/blq/notes/icons/user-invisible-symbolic.svg"),
-            };
+            quote_btn = new Gtk.ToggleButton();
+            bind_btn_icon(quote_btn, "chat-box");
             lists_box.append(quote_btn);
             quote_btn.clicked.connect(on_attribute_button_clicked);
 

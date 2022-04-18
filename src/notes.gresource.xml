@@ -10,8 +10,11 @@
     <file>js/trix.css</file>
     <file>js/editor.html</file>
 
-    <file>icons/code-solid.svg</file>
-    <file>icons/list-ol-solid.svg</file>
-    <file>icons/user-invisible-symbolic.svg</file>
+    <file>icons/code-symbolic.svg</file>
+    <file>icons/code-dark-symbolic.svg</file>
+    <file>icons/list-ol-symbolic.svg</file>
+    <file>icons/list-ol-dark-symbolic.svg</file>
+    <file>icons/chat-box-symbolic.svg</file>
+    <file>icons/chat-box-dark-symbolic.svg</file>
   </gresource>
 </gresources>
