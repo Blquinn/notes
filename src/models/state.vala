@@ -181,25 +181,22 @@ namespace Notes.Models {
         }
 
 		private void bind_color_scheme() {
-			var gnome_settings = new Settings("org.gnome.desktop.interface");
-			var gtk_theme = gnome_settings.get_string("gtk-theme");
-			color_scheme = map_color_scheme(gtk_theme);
-			gnome_settings.bind_with_mapping("gtk-theme", this, "color-scheme", SettingsBindFlags.DEFAULT, 
-				(value, variant, _) => {
-					var scheme = map_color_scheme(variant.get_string());
-					value.set_enum(scheme);
-					return true;
-				}, 
-				(a, b, c) => { return true; }, 
-				null, null);
-		}
-
-		private static ColorScheme map_color_scheme(string theme_name) {
-			var gtk_settings = Gtk.Settings.get_default();
-			var is_dark = (gtk_settings != null && gtk_settings.gtk_application_prefer_dark_theme == true)
-				? true
-				: theme_name.down().contains("dark");
-			return is_dark ? ColorScheme.DARK : ColorScheme.LIGHT;
+            var adw_app = (Adw.Application) this.application;
+            adw_app.style_manager.bind_property("color-scheme", this, "color-scheme", BindingFlags.SYNC_CREATE,
+                (_, f, ref t) => {
+                    switch (f.get_enum()) {
+                    case Adw.ColorScheme.FORCE_DARK:
+                    case Adw.ColorScheme.PREFER_DARK:
+                        t.set_enum(ColorScheme.DARK);
+                        break;
+                    case Adw.ColorScheme.FORCE_LIGHT:
+                    case Adw.ColorScheme.PREFER_LIGHT:
+                    case Adw.ColorScheme.DEFAULT:
+                        t.set_enum(ColorScheme.LIGHT);
+                        break;
+                    }
+                    return true;
+                }, null);
 		}
     }
 }

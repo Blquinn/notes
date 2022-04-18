@@ -39,13 +39,6 @@ namespace Notes {
 			this.set_resource_base_path("/me/blq/notes");
 			this.add_action_entries(this.APP_ACTIONS, this);
 			this.set_accels_for_action("app.quit", {"<primary>q"});
-
-			state.bind_property("color-scheme", style_manager, "color-scheme", BindingFlags.SYNC_CREATE, 
-				(_, f, ref t) => {
-					var adw_scheme = f.get_enum() == Models.ColorScheme.DARK ? Adw.ColorScheme.PREFER_DARK : Adw.ColorScheme.PREFER_LIGHT;
-					t.set_enum(adw_scheme);
-					return true;
-				}, null);
 		}
 
 		public override void activate () {
