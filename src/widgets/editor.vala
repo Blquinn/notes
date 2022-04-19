@@ -392,18 +392,6 @@ namespace Notes.Widgets {
             editor.give_webview_focus();
         }
 
-        // TODO: Figure out how to recolor svgs in a smarter way.
-        private void bind_btn_icon(Gtk.Button btn, string icon_name) {
-            app_state.bind_property("color-scheme", btn, "icon-name", BindingFlags.SYNC_CREATE, 
-                (_, f, ref t) => {
-                    var icon = f.get_enum() == Models.ColorScheme.DARK
-                        ? icon_name + "-dark-symbolic"
-                        : icon_name + "-symbolic";
-                    t.set_string(icon);
-                    return true;
-                }, null);
-        }
-
         private void build_ui() {
             // TODO: Why is there additional spacing after the left-most child?
             var inner_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 8) {
@@ -464,18 +452,21 @@ namespace Notes.Widgets {
             lists_box.append(unordered_list_btn);
             unordered_list_btn.clicked.connect(on_attribute_button_clicked);
 
-            ordered_list_btn = new Gtk.ToggleButton();
-            bind_btn_icon(ordered_list_btn, "list-ol");
+            ordered_list_btn = new Gtk.ToggleButton() {
+                icon_name = "list-ol-symbolic",
+            };
             lists_box.append(ordered_list_btn);
             ordered_list_btn.clicked.connect(on_attribute_button_clicked);
 
-            code_btn = new Gtk.ToggleButton();
-            bind_btn_icon(code_btn, "code");
+            code_btn = new Gtk.ToggleButton() {
+                icon_name = "code-symbolic",
+            };
             lists_box.append(code_btn);
             code_btn.clicked.connect(on_attribute_button_clicked);
 
-            quote_btn = new Gtk.ToggleButton();
-            bind_btn_icon(quote_btn, "chat-box");
+            quote_btn = new Gtk.ToggleButton() {
+                icon_name = "chat-box-symbolic",
+            };
             lists_box.append(quote_btn);
             quote_btn.clicked.connect(on_attribute_button_clicked);
 

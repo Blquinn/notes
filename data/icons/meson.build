@@ -8,6 +8,11 @@ install_data(
 
 symbolic_dir = join_paths('hicolor', 'symbolic', 'apps')
 install_data(
-  join_paths(symbolic_dir, ('@0@-symbolic.svg').format(application_id)),
+  [
+    join_paths(symbolic_dir, ('@0@-symbolic.svg').format(application_id)),
+    join_paths(symbolic_dir, ('list-ol-symbolic.svg').format(application_id)),
+    join_paths(symbolic_dir, ('code-symbolic.svg').format(application_id)),
+    join_paths(symbolic_dir, ('chat-box-symbolic.svg').format(application_id)),
+  ],
   install_dir: join_paths(get_option('datadir'), 'icons', symbolic_dir)
 )
