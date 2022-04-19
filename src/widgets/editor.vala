@@ -31,6 +31,7 @@ namespace Notes.Widgets {
         // private Gtk.TextView note_text;
         private WebKit.WebView webview;
         private WebKit.UserContentManager webview_ucm;
+        private Adw.StyleManager style_manager;
 
         private Binding? title_binding;
         private Binding? last_updated_binding;
@@ -42,6 +43,7 @@ namespace Notes.Widgets {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
             this.app_state = state;
             this.win_state = win_state;
+            this.style_manager = Adw.StyleManager.get_for_display(get_display());
             build_ui();
         }
 
@@ -135,7 +137,8 @@ namespace Notes.Widgets {
 
         private void recolor_webview() {
             string js;
-            if (app_state.color_scheme == Models.ColorScheme.DARK) {
+
+            if (style_manager.dark) {
                 js = """
                 document.documentElement.style.setProperty('--text-color', '#ffffff');
                 document.documentElement.style.setProperty('--background-color', '#1e1e1e');
@@ -268,7 +271,7 @@ namespace Notes.Widgets {
             webview_ucm.register_script_message_handler("activeAttributesChanged");
 
             win_state.notify["active-note"].connect(on_active_note_changed);
-            app_state.notify["color-scheme"].connect(recolor_webview);
+            style_manager.notify["dark"].connect(recolor_webview);
 
             webview.load_changed.connect((e) => {
                 if (e == WebKit.LoadEvent.FINISHED)

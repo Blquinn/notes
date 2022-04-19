@@ -78,11 +78,6 @@ namespace Notes.Models {
         }
     }
 
-    public enum ColorScheme {
-        LIGHT,
-        DARK
-    }
-
     public class AppState : Object {
         private unowned Application application;
         public NoteDao note_dao { get; set; }
@@ -96,13 +91,9 @@ namespace Notes.Models {
         public ListStore notes { get; default = new ListStore(typeof(Note)); }
         public ListStore notebooks { get; default = new ListStore(typeof(Notebook)); }
 
-        public ColorScheme color_scheme { get; set; default = ColorScheme.LIGHT; }
-
         public AppState(Application app) {
             this.application = app;
             this.notebooks.items_changed.connect(() => notebook_changed());
-
-            bind_color_scheme();
 
 			try {
 				var db = new Db();
@@ -179,24 +170,5 @@ namespace Notes.Models {
                 comp = b_note.updated_at.compare(a_note.updated_at);
             return comp;
         }
-
-		private void bind_color_scheme() {
-            var adw_app = (Adw.Application) this.application;
-            adw_app.style_manager.bind_property("color-scheme", this, "color-scheme", BindingFlags.SYNC_CREATE,
-                (_, f, ref t) => {
-                    switch (f.get_enum()) {
-                    case Adw.ColorScheme.FORCE_DARK:
-                    case Adw.ColorScheme.PREFER_DARK:
-                        t.set_enum(ColorScheme.DARK);
-                        break;
-                    case Adw.ColorScheme.FORCE_LIGHT:
-                    case Adw.ColorScheme.PREFER_LIGHT:
-                    case Adw.ColorScheme.DEFAULT:
-                        t.set_enum(ColorScheme.LIGHT);
-                        break;
-                    }
-                    return true;
-                }, null);
-		}
     }
 }
