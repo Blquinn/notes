@@ -37,6 +37,7 @@ any help is appreciated :)
 - [x] Arbitrary nesting of block formatting
 - [x] Pasting images support
 - [ ] Drawing support
+- [ ] Hyperlinks (They should be editable and open in the browser)
 
 ## Issues
 
