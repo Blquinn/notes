@@ -23,9 +23,9 @@ any help is appreciated :)
 - [x] Trash can
 - [x] Local persistence
 - [x] Auto-save
+- [x] Dark theme support
 - [ ] Cloud sync
 - [ ] Sync with 3rd party applications
-- [ ] Dark theme support
 - [ ] Full text search (serching note contents)
 
 *Editor*
