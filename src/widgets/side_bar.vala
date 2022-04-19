@@ -109,6 +109,7 @@ namespace Notes.Widgets {
             };
             lbl.halign = Gtk.Align.START;
             lbl.margin_start = 10;
+            lbl.margin_bottom = 4;
             append(lbl);
             append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
         }
