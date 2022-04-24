@@ -106,10 +106,10 @@ namespace Notes.Widgets {
             margin_top = 10;
             var lbl = new Gtk.Label(text) {
                 css_classes = {"heading"},
+                halign = Gtk.Align.START,
+                margin_start = 10,
+                margin_bottom = 4,
             };
-            lbl.halign = Gtk.Align.START;
-            lbl.margin_start = 10;
-            lbl.margin_bottom = 4;
             append(lbl);
             append(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
         }

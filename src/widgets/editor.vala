@@ -138,20 +138,37 @@ namespace Notes.Widgets {
         private void recolor_webview() {
             string js;
 
+            var style_context = get_style_context();
+
+            Gdk.RGBA bg_color;
+            if (!style_context.lookup_color("theme_base_color", out bg_color)) {
+                error("Failed to lookup editor color view_bg_color.");
+            }
+
+            Gdk.RGBA fg_color;
+            if (!style_context.lookup_color("theme_text_color", out fg_color)) {
+                error("Failed to lookup editor color view_fg_color.");
+            }
+
+            Gdk.RGBA shade_color;
+            if (!style_context.lookup_color("theme_unfocused_bg_color", out shade_color)) {
+                error("Failed to lookup editor color shade_color.");
+            }
+
             if (style_manager.dark) {
-                js = """
-                document.documentElement.style.setProperty('--text-color', '#ffffff');
-                document.documentElement.style.setProperty('--background-color', '#1e1e1e');
-                document.documentElement.style.setProperty('--code-block-background-color', '#393939');
-                document.documentElement.style.setProperty('--code-block-text-color', '#ffffff');
-                """;
+                js = @"
+                document.documentElement.style.setProperty('--text-color', '$(fg_color)');
+                document.documentElement.style.setProperty('--background-color', '$(bg_color)');
+                document.documentElement.style.setProperty('--code-block-background-color', '$(shade_color)');
+                document.documentElement.style.setProperty('--code-block-text-color', '$(fg_color)');
+                ";
             } else {
-                js = """
-                document.documentElement.style.setProperty('--text-color', 'inherit');
-                document.documentElement.style.setProperty('--background-color', 'inherit');
-                document.documentElement.style.setProperty('--code-block-background-color', '#eee');
-                document.documentElement.style.setProperty('--code-block-text-color', 'inherit');
-                """;
+                js = @"
+                document.documentElement.style.setProperty('--text-color', '$(fg_color)');
+                document.documentElement.style.setProperty('--background-color', '$(bg_color)');
+                document.documentElement.style.setProperty('--code-block-background-color', '$(shade_color)');
+                document.documentElement.style.setProperty('--code-block-text-color', '$(fg_color)');
+                ";
             }
 
             webview.run_javascript.begin(js, null);
