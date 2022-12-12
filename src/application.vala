@@ -52,10 +52,12 @@ namespace Notes {
 		}
 
 		private void on_about_action () {
-			string[] authors = {"Benjamin Quinn"};
+			string[] authors = {"Benjamin Quinn<benlquinn@gmail.com>"};
+			string[] artists = {"Allan Day<aday@gnome.org>"};
 			Gtk.show_about_dialog(this.active_window,
 				                  "program-name", "notes",
 				                  "authors", authors,
+				                  "artists", artists,
 				                  "version", "0.1.0");
 		}
 

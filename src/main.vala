@@ -21,3 +21,4 @@ int main (string[] args) {
 	var app = new Notes.Application();
 	return app.run(args);
 }
+
