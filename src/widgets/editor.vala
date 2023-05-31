@@ -28,9 +28,7 @@ namespace Notes.Widgets {
         private Gtk.Entry title_entry;
         private Gtk.Label notebook_name_lbl;
         private Gtk.Label last_updated_lbl;
-        // private Gtk.TextView note_text;
         private WebKit.WebView webview;
-        private WebKit.UserContentManager webview_ucm;
         private Adw.StyleManager style_manager;
 
         private Binding? title_binding;
@@ -108,11 +106,11 @@ namespace Notes.Widgets {
 
             // Set editor state
             // TODO: Bind the editor contents.
-            webview.run_javascript.begin(@"loadEditor($(note.id), $(note.editor_state));");
+            var js = @"loadEditor($(note.id), $(note.editor_state));";
+            webview.evaluate_javascript.begin(js, js.length, null, null);
         }
 
-        private void on_editor_changed(WebKit.JavascriptResult payload) {
-            var val = payload.get_js_value();
+        private void on_editor_changed(JSC.Value val) {
             var note_id = (int) val.object_get_property("noteId").to_int32();
             var editor_json = val.object_get_property("state").to_string();
             var editor_text = val.object_get_property("text").to_string();
@@ -171,7 +169,7 @@ namespace Notes.Widgets {
                 ";
             }
 
-            webview.run_javascript.begin(js, null);
+            webview.evaluate_javascript.begin(js, js.length, null, null);
         }
         
         private void build_ui() {
@@ -233,7 +231,7 @@ namespace Notes.Widgets {
             
             contents_box.append(note_details_box);
             
-            webview_ucm = new WebKit.UserContentManager();
+            //  webview_ucm = new WebKit.UserContentManager();
             var webview_settings = new WebKit.Settings() {
                 enable_write_console_messages_to_stdout = true,
                 allow_top_navigation_to_data_urls = false,
@@ -242,7 +240,8 @@ namespace Notes.Widgets {
                 // TODO: Disable this in production builds.
                 enable_developer_extras = true,
             };
-            webview = new WebKit.WebView.with_user_content_manager(webview_ucm) {
+            webview = new WebKit.WebView() {
+                //  user_content_manager = webview_ucm,
                 vexpand = true,
                 settings = webview_settings,
             };
@@ -251,8 +250,8 @@ namespace Notes.Widgets {
             load_stylesheet_from_resource("/me/blq/notes/js/trix.css");
 
             // Register script messages.
-            webview_ucm.script_message_received["editorChanged"].connect(on_editor_changed);
-            webview_ucm.register_script_message_handler("editorChanged");
+            webview.user_content_manager.script_message_received["editorChanged"].connect(on_editor_changed);
+            webview.user_content_manager.register_script_message_handler("editorChanged", null);
 
             webview.decide_policy.connect((decision, type) => {
                 if (type == WebKit.PolicyDecisionType.NAVIGATION_ACTION) {
@@ -284,8 +283,8 @@ namespace Notes.Widgets {
             var editor_toolbar = new EditorToolbar(app_state, this);
             editor_box.append(editor_toolbar);
             
-            webview_ucm.script_message_received["activeAttributesChanged"].connect(editor_toolbar.on_editor_active_attributes_changed);
-            webview_ucm.register_script_message_handler("activeAttributesChanged");
+            webview.user_content_manager.script_message_received["activeAttributesChanged"].connect(editor_toolbar.on_editor_active_attributes_changed);
+            webview.user_content_manager.register_script_message_handler("activeAttributesChanged", null);
 
             win_state.notify["active-note"].connect(on_active_note_changed);
             style_manager.notify["dark"].connect(recolor_webview);
@@ -308,7 +307,7 @@ namespace Notes.Widgets {
                     null,
                     null
                 );
-                webview_ucm.add_style_sheet(stylesheet);
+                webview.user_content_manager.add_style_sheet(stylesheet);
             } catch (Error e) {
                 error("Failed to read resource: %s", e.message);
             }
@@ -325,23 +324,26 @@ namespace Notes.Widgets {
                     null,
                     null
                 );
-                webview_ucm.add_script(res_script);
+                webview.user_content_manager.add_script(res_script);
             } catch (Error e) {
                 error("Failed to read resource: %s", e.message);
             }
         }
 
         public void activate_attribute(string attribute) {
-            webview.run_javascript.begin(@"toggleAttribute('$(attribute)');");
+            var js = @"toggleAttribute('$(attribute)');";
+            webview.evaluate_javascript.begin(js, js.length, null, null);
         }
 
         public void on_change_nesting_level_clicked(bool increase) {
             if (increase) {
                 debug("Increasing nesting level.");
-                webview.run_javascript.begin("element.editor.increaseNestingLevel();");
+                var js = "element.editor.increaseNestingLevel();";
+                webview.evaluate_javascript.begin(js, js.length, null, null);
             } else {
                 debug("Decreasing nesting level.");
-                webview.run_javascript.begin("element.editor.decreaseNestingLevel();");
+                var js = "element.editor.decreaseNestingLevel();";
+                webview.evaluate_javascript.begin(js, js.length, null, null);
             }
         }
 
@@ -379,8 +381,7 @@ namespace Notes.Widgets {
             build_ui();
         }
 
-        public void on_editor_active_attributes_changed(WebKit.JavascriptResult payload) {
-            var val = payload.get_js_value();
+        public void on_editor_active_attributes_changed(JSC.Value val) {
             btn_map.foreach((key, btn) => {
                 var has_prop = val.object_has_property(key);
                 if (has_prop) {

@@ -23,6 +23,7 @@ notes_deps = [
   dependency('sqlite3', required: true),
   dependency('libadwaita-1', required: true),
   dependency('webkitgtk-6.0', required: true),
+  dependency('javascriptcoregtk-6.0', required: true),
   meson.get_compiler('vala').find_library('posix'),
 ]
 
